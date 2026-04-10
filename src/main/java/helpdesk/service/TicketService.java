@@ -14,6 +14,10 @@ import helpdesk.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import helpdesk.dto.AdminTicketSummaryResponse;
+import helpdesk.model.DeviceType;
+import helpdesk.model.IssueCategory;
+import org.springframework.data.domain.Sort;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -234,5 +238,57 @@ public class TicketService {
                 .updatedAt(ticket.getUpdatedAt())
                 .resolvedAt(ticket.getResolvedAt())
                 .build();
+    }
+    @Transactional(readOnly = true)
+    public AdminTicketSummaryResponse getTicketSummary() {
+        List<Ticket> tickets = ticketRepository.findAll();
+
+        long totalTickets = tickets.size();
+        long pendingTickets = tickets.stream()
+                .filter(ticket -> ticket.getStatus() == TicketStatus.PENDING)
+                .count();
+        long inProgressTickets = tickets.stream()
+                .filter(ticket -> ticket.getStatus() == TicketStatus.IN_PROGRESS)
+                .count();
+        long resolvedTickets = tickets.stream()
+                .filter(ticket -> ticket.getStatus() == TicketStatus.RESOLVED)
+                .count();
+        long assignedTickets = tickets.stream()
+                .filter(ticket -> ticket.getAssignedTechnician() != null)
+                .count();
+        long unassignedTickets = tickets.stream()
+                .filter(ticket -> ticket.getAssignedTechnician() == null)
+                .count();
+
+        return AdminTicketSummaryResponse.builder()
+                .totalTickets(totalTickets)
+                .pendingTickets(pendingTickets)
+                .inProgressTickets(inProgressTickets)
+                .resolvedTickets(resolvedTickets)
+                .assignedTickets(assignedTickets)
+                .unassignedTickets(unassignedTickets)
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<AdminTicketResponse> searchTickets(TicketStatus status,
+                                                   DeviceType deviceType,
+                                                   IssueCategory issueCategory,
+                                                   String assignedTechnicianUsername,
+                                                   String department) {
+
+        return ticketRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
+                .stream()
+                .filter(ticket -> status == null || ticket.getStatus() == status)
+                .filter(ticket -> deviceType == null || ticket.getDeviceType() == deviceType)
+                .filter(ticket -> issueCategory == null || ticket.getIssueCategory() == issueCategory)
+                .filter(ticket -> assignedTechnicianUsername == null || assignedTechnicianUsername.isBlank()
+                        || (ticket.getAssignedTechnician() != null
+                        && ticket.getAssignedTechnician().getUsername().equalsIgnoreCase(assignedTechnicianUsername)))
+                .filter(ticket -> department == null || department.isBlank()
+                        || (ticket.getUser().getDepartment() != null
+                        && ticket.getUser().getDepartment().equalsIgnoreCase(department)))
+                .map(this::mapToAdminResponse)
+                .toList();
     }
 }

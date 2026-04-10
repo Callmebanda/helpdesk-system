@@ -8,6 +8,9 @@ import helpdesk.service.TicketService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+import helpdesk.dto.AdminTicketSummaryResponse;
+import helpdesk.model.DeviceType;
+import helpdesk.model.IssueCategory;
 
 import java.util.List;
 import java.util.Map;
@@ -41,5 +44,26 @@ public class AdminTicketController {
     public AdminTicketResponse assignTicket(@PathVariable Long id,
                                             @Valid @RequestBody AssignTicketRequest request) {
         return ticketService.assignTicket(id, request);
+    }
+    @GetMapping("/summary")
+    public AdminTicketSummaryResponse getTicketSummary() {
+        return ticketService.getTicketSummary();
+    }
+
+    @GetMapping("/search")
+    public List<AdminTicketResponse> searchTickets(
+            @RequestParam(required = false) TicketStatus status,
+            @RequestParam(required = false) DeviceType deviceType,
+            @RequestParam(required = false) IssueCategory issueCategory,
+            @RequestParam(required = false) String assignedTechnicianUsername,
+            @RequestParam(required = false) String department
+    ) {
+        return ticketService.searchTickets(
+                status,
+                deviceType,
+                issueCategory,
+                assignedTechnicianUsername,
+                department
+        );
     }
 }
