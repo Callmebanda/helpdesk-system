@@ -24,6 +24,16 @@ public class Ticket {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    private IssueCategory issueCategory;
+
+    @Column(nullable = false)
+    private String assetNumber;
+
+    @Column(columnDefinition = "TEXT")
+    private String otherIssue;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private DeviceType deviceType;
 
     @Column(nullable = false)
@@ -56,4 +66,5 @@ public class Ticket {
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
 }

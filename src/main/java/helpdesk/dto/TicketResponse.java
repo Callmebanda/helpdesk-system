@@ -4,7 +4,7 @@ import helpdesk.model.DeviceType;
 import helpdesk.model.TicketStatus;
 import lombok.Builder;
 import lombok.Getter;
-
+import helpdesk.model.IssueCategory;
 import java.time.LocalDateTime;
 
 @Getter
@@ -27,4 +27,7 @@ public class TicketResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime resolvedAt;
+    private IssueCategory issueCategory;
+    private String assetNumber;
+    private String otherIssue;
 }

@@ -29,8 +29,11 @@ public class TicketService {
         Ticket ticket = Ticket.builder()
                 .user(user)
                 .deviceType(request.getDeviceType())
+                .issueCategory(request.getIssueCategory())
+                .assetNumber(request.getAssetNumber())
                 .problemTitle(request.getProblemTitle())
                 .description(request.getDescription())
+                .otherIssue(request.getOtherIssue())
                 .status(TicketStatus.PENDING)
                 .build();
 
@@ -88,8 +91,11 @@ public class TicketService {
                 .telephoneExtension(user.getTelephoneExtension())
                 .building(user.getBuilding())
                 .deviceType(ticket.getDeviceType())
+                .issueCategory(ticket.getIssueCategory())
+                .assetNumber(ticket.getAssetNumber())
                 .problemTitle(ticket.getProblemTitle())
                 .description(ticket.getDescription())
+                .otherIssue(ticket.getOtherIssue())
                 .status(ticket.getStatus())
                 .createdAt(ticket.getCreatedAt())
                 .updatedAt(ticket.getUpdatedAt())
