@@ -32,6 +32,12 @@ public class Ticket {
     @Column(columnDefinition = "TEXT")
     private String otherIssue;
 
+    @Column(columnDefinition = "TEXT")
+    private String resolutionNote;
+
+    @Column(columnDefinition = "TEXT")
+    private String internalNote;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private DeviceType deviceType;

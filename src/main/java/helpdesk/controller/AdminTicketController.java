@@ -1,6 +1,7 @@
 package helpdesk.controller;
 
-import helpdesk.dto.TicketResponse;
+import helpdesk.dto.AdminTicketResponse;
+import helpdesk.dto.UpdateTicketNotesRequest;
 import helpdesk.model.TicketStatus;
 import helpdesk.service.TicketService;
 import lombok.RequiredArgsConstructor;
@@ -17,14 +18,20 @@ public class AdminTicketController {
     private final TicketService ticketService;
 
     @GetMapping
-    public List<TicketResponse> getAllTickets() {
+    public List<AdminTicketResponse> getAllTickets() {
         return ticketService.getAllTickets();
     }
 
     @PatchMapping("/{id}/status")
-    public TicketResponse updateStatus(@PathVariable Long id,
-                                       @RequestBody Map<String, String> request) {
+    public AdminTicketResponse updateStatus(@PathVariable Long id,
+                                            @RequestBody Map<String, String> request) {
         TicketStatus status = TicketStatus.valueOf(request.get("status"));
         return ticketService.updateStatus(id, status);
+    }
+
+    @PatchMapping("/{id}/notes")
+    public AdminTicketResponse updateNotes(@PathVariable Long id,
+                                           @RequestBody UpdateTicketNotesRequest request) {
+        return ticketService.updateNotes(id, request);
     }
 }

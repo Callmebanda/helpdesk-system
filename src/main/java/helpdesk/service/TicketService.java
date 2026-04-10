@@ -1,7 +1,9 @@
 package helpdesk.service;
 
+import helpdesk.dto.AdminTicketResponse;
 import helpdesk.dto.CreateTicketRequest;
 import helpdesk.dto.TicketResponse;
+import helpdesk.dto.UpdateTicketNotesRequest;
 import helpdesk.model.Ticket;
 import helpdesk.model.TicketStatus;
 import helpdesk.model.User;
@@ -38,7 +40,7 @@ public class TicketService {
                 .build();
 
         Ticket savedTicket = ticketRepository.save(ticket);
-        return mapToResponse(savedTicket);
+        return mapToUserResponse(savedTicket);
     }
 
     @Transactional(readOnly = true)
@@ -48,20 +50,20 @@ public class TicketService {
 
         return ticketRepository.findByUser(user)
                 .stream()
-                .map(this::mapToResponse)
+                .map(this::mapToUserResponse)
                 .toList();
     }
 
     @Transactional(readOnly = true)
-    public List<TicketResponse> getAllTickets() {
+    public List<AdminTicketResponse> getAllTickets() {
         return ticketRepository.findAll()
                 .stream()
-                .map(this::mapToResponse)
+                .map(this::mapToAdminResponse)
                 .toList();
     }
 
     @Transactional
-    public TicketResponse updateStatus(Long id, TicketStatus status) {
+    public AdminTicketResponse updateStatus(Long id, TicketStatus status) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Ticket not found"));
 
@@ -74,10 +76,22 @@ public class TicketService {
         }
 
         Ticket savedTicket = ticketRepository.save(ticket);
-        return mapToResponse(savedTicket);
+        return mapToAdminResponse(savedTicket);
     }
 
-    private TicketResponse mapToResponse(Ticket ticket) {
+    @Transactional
+    public AdminTicketResponse updateNotes(Long id, UpdateTicketNotesRequest request) {
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+
+        ticket.setResolutionNote(request.getResolutionNote());
+        ticket.setInternalNote(request.getInternalNote());
+
+        Ticket savedTicket = ticketRepository.save(ticket);
+        return mapToAdminResponse(savedTicket);
+    }
+
+    private TicketResponse mapToUserResponse(Ticket ticket) {
         User user = ticket.getUser();
 
         return TicketResponse.builder()
@@ -96,6 +110,35 @@ public class TicketService {
                 .problemTitle(ticket.getProblemTitle())
                 .description(ticket.getDescription())
                 .otherIssue(ticket.getOtherIssue())
+                .resolutionNote(ticket.getResolutionNote())
+                .status(ticket.getStatus())
+                .createdAt(ticket.getCreatedAt())
+                .updatedAt(ticket.getUpdatedAt())
+                .resolvedAt(ticket.getResolvedAt())
+                .build();
+    }
+
+    private AdminTicketResponse mapToAdminResponse(Ticket ticket) {
+        User user = ticket.getUser();
+
+        return AdminTicketResponse.builder()
+                .id(ticket.getId())
+                .username(user.getUsername())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .department(user.getDepartment())
+                .officeNumber(user.getOfficeNumber())
+                .floorNumber(user.getFloorNumber())
+                .telephoneExtension(user.getTelephoneExtension())
+                .building(user.getBuilding())
+                .deviceType(ticket.getDeviceType())
+                .issueCategory(ticket.getIssueCategory())
+                .assetNumber(ticket.getAssetNumber())
+                .problemTitle(ticket.getProblemTitle())
+                .description(ticket.getDescription())
+                .otherIssue(ticket.getOtherIssue())
+                .resolutionNote(ticket.getResolutionNote())
+                .internalNote(ticket.getInternalNote())
                 .status(ticket.getStatus())
                 .createdAt(ticket.getCreatedAt())
                 .updatedAt(ticket.getUpdatedAt())
