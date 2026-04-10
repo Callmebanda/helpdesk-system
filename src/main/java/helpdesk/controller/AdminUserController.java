@@ -32,4 +32,13 @@ public class AdminUserController {
     public UserResponse getUserById(@PathVariable Long id) {
         return userService.getUserById(id);
     }
+    @PatchMapping("/{id}/enable")
+    public UserResponse enableUser(@PathVariable Long id) {
+        return userService.setUserEnabled(id, true);
+    }
+
+    @PatchMapping("/{id}/disable")
+    public UserResponse disableUser(@PathVariable Long id) {
+        return userService.setUserEnabled(id, false);
+    }
 }

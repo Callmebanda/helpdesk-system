@@ -71,4 +71,13 @@ public class UserService {
                 .createdAt(user.getCreatedAt())
                 .build();
     }
+    public UserResponse setUserEnabled(Long id, boolean enabled) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setEnabled(enabled);
+        User savedUser = userRepository.save(user);
+
+        return mapToResponse(savedUser);
+    }
 }
