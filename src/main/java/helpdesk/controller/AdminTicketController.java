@@ -1,9 +1,11 @@
 package helpdesk.controller;
 
 import helpdesk.dto.AdminTicketResponse;
+import helpdesk.dto.AssignTicketRequest;
 import helpdesk.dto.UpdateTicketNotesRequest;
 import helpdesk.model.TicketStatus;
 import helpdesk.service.TicketService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
@@ -33,5 +35,11 @@ public class AdminTicketController {
     public AdminTicketResponse updateNotes(@PathVariable Long id,
                                            @RequestBody UpdateTicketNotesRequest request) {
         return ticketService.updateNotes(id, request);
+    }
+
+    @PatchMapping("/{id}/assign")
+    public AdminTicketResponse assignTicket(@PathVariable Long id,
+                                            @Valid @RequestBody AssignTicketRequest request) {
+        return ticketService.assignTicket(id, request);
     }
 }

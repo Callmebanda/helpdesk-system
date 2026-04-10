@@ -1,9 +1,11 @@
 package helpdesk.service;
 
 import helpdesk.dto.AdminTicketResponse;
+import helpdesk.dto.AssignTicketRequest;
 import helpdesk.dto.CreateTicketRequest;
 import helpdesk.dto.TicketResponse;
 import helpdesk.dto.UpdateTicketNotesRequest;
+import helpdesk.model.Role;
 import helpdesk.model.Ticket;
 import helpdesk.model.TicketStatus;
 import helpdesk.model.User;
@@ -91,6 +93,85 @@ public class TicketService {
         return mapToAdminResponse(savedTicket);
     }
 
+    @Transactional
+    public AdminTicketResponse assignTicket(Long id, AssignTicketRequest request) {
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+
+        User technician = userRepository.findByUsername(request.getTechnicianUsername())
+                .orElseThrow(() -> new RuntimeException("Technician not found"));
+
+        if (technician.getRole() != Role.TECHNICIAN) {
+            throw new RuntimeException("Assigned user must have TECHNICIAN role");
+        }
+
+        if (!technician.isEnabled()) {
+            throw new RuntimeException("Cannot assign ticket to a disabled technician");
+        }
+
+        ticket.setAssignedTechnician(technician);
+        ticket.setAssignedAt(LocalDateTime.now());
+
+        Ticket savedTicket = ticketRepository.save(ticket);
+        return mapToAdminResponse(savedTicket);
+    }
+
+    @Transactional(readOnly = true)
+    public List<AdminTicketResponse> getAssignedTickets(String technicianUsername) {
+        User technician = userRepository.findByUsername(technicianUsername)
+                .orElseThrow(() -> new RuntimeException("Technician not found"));
+
+        return ticketRepository.findByAssignedTechnician(technician)
+                .stream()
+                .map(this::mapToAdminResponse)
+                .toList();
+    }
+
+    @Transactional
+    public AdminTicketResponse updateAssignedTicketStatus(Long id, TicketStatus status, String technicianUsername) {
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+
+        validateAssignedTechnician(ticket, technicianUsername);
+
+        ticket.setStatus(status);
+
+        if (status == TicketStatus.RESOLVED) {
+            ticket.setResolvedAt(LocalDateTime.now());
+        } else {
+            ticket.setResolvedAt(null);
+        }
+
+        Ticket savedTicket = ticketRepository.save(ticket);
+        return mapToAdminResponse(savedTicket);
+    }
+
+    @Transactional
+    public AdminTicketResponse updateAssignedTicketNotes(Long id,
+                                                         UpdateTicketNotesRequest request,
+                                                         String technicianUsername) {
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+
+        validateAssignedTechnician(ticket, technicianUsername);
+
+        ticket.setResolutionNote(request.getResolutionNote());
+        ticket.setInternalNote(request.getInternalNote());
+
+        Ticket savedTicket = ticketRepository.save(ticket);
+        return mapToAdminResponse(savedTicket);
+    }
+
+    private void validateAssignedTechnician(Ticket ticket, String technicianUsername) {
+        if (ticket.getAssignedTechnician() == null) {
+            throw new RuntimeException("Ticket is not assigned to any technician");
+        }
+
+        if (!ticket.getAssignedTechnician().getUsername().equals(technicianUsername)) {
+            throw new RuntimeException("You are not assigned to this ticket");
+        }
+    }
+
     private TicketResponse mapToUserResponse(Ticket ticket) {
         User user = ticket.getUser();
 
@@ -111,6 +192,10 @@ public class TicketService {
                 .description(ticket.getDescription())
                 .otherIssue(ticket.getOtherIssue())
                 .resolutionNote(ticket.getResolutionNote())
+                .assignedTechnicianUsername(
+                        ticket.getAssignedTechnician() != null ? ticket.getAssignedTechnician().getUsername() : null
+                )
+                .assignedAt(ticket.getAssignedAt())
                 .status(ticket.getStatus())
                 .createdAt(ticket.getCreatedAt())
                 .updatedAt(ticket.getUpdatedAt())
@@ -120,6 +205,7 @@ public class TicketService {
 
     private AdminTicketResponse mapToAdminResponse(Ticket ticket) {
         User user = ticket.getUser();
+        User technician = ticket.getAssignedTechnician();
 
         return AdminTicketResponse.builder()
                 .id(ticket.getId())
@@ -139,6 +225,10 @@ public class TicketService {
                 .otherIssue(ticket.getOtherIssue())
                 .resolutionNote(ticket.getResolutionNote())
                 .internalNote(ticket.getInternalNote())
+                .assignedTechnicianUsername(technician != null ? technician.getUsername() : null)
+                .assignedTechnicianFirstName(technician != null ? technician.getFirstName() : null)
+                .assignedTechnicianLastName(technician != null ? technician.getLastName() : null)
+                .assignedAt(ticket.getAssignedAt())
                 .status(ticket.getStatus())
                 .createdAt(ticket.getCreatedAt())
                 .updatedAt(ticket.getUpdatedAt())

@@ -36,4 +36,9 @@ public class AdminTicketResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private LocalDateTime resolvedAt;
+
+    private String assignedTechnicianUsername;
+    private String assignedTechnicianFirstName;
+    private String assignedTechnicianLastName;
+    private LocalDateTime assignedAt;
 }

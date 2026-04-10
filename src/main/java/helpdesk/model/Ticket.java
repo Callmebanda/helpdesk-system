@@ -22,6 +22,12 @@ public class Ticket {
     @JoinColumn(name = "user_id")
     private User user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "assigned_technician_id")
+    private User assignedTechnician;
+
+    private LocalDateTime assignedAt;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private IssueCategory issueCategory;

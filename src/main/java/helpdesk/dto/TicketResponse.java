@@ -31,4 +31,6 @@ public class TicketResponse {
     private String assetNumber;
     private String otherIssue;
     private String resolutionNote;
+    private String assignedTechnicianUsername;
+    private LocalDateTime assignedAt;
 }
