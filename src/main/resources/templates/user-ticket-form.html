@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Ticket</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="layout">
+    <header class="topbar">
+        <h1>Create Ticket</h1>
+        <div>
+            <span th:text="'Signed in as: ' + ${username}"></span>
+            <a href="/user/dashboard" class="logout-btn">Back</a>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+    </header>
+
+    <main class="content">
+        <div class="card">
+            <h2>Log a Technical Issue</h2>
+
+            <form th:action="@{/user/tickets/new}" th:object="${ticketForm}" method="post" class="form">
+
+                <label for="deviceType">Device Type</label>
+                <select id="deviceType" th:field="*{deviceType}" required>
+                    <option value="">-- Select Device --</option>
+                    <option th:each="device : ${deviceTypes}"
+                            th:value="${device}"
+                            th:text="${device}">
+                    </option>
+                </select>
+                <div class="field-error" th:if="${#fields.hasErrors('deviceType')}" th:errors="*{deviceType}"></div>
+
+                <label for="issueCategory">Issue Category</label>
+                <select id="issueCategory" th:field="*{issueCategory}" required>
+                    <option value="">-- Select Issue Category --</option>
+                    <option th:each="issue : ${issueCategories}"
+                            th:value="${issue}"
+                            th:text="${issue}">
+                    </option>
+                </select>
+                <div class="field-error" th:if="${#fields.hasErrors('issueCategory')}" th:errors="*{issueCategory}"></div>
+
+                <label for="assetNumber">Asset Number</label>
+                <input id="assetNumber" th:field="*{assetNumber}" type="text" placeholder="e.g. MOF-PRN-010" required>
+                <div class="field-error" th:if="${#fields.hasErrors('assetNumber')}" th:errors="*{assetNumber}"></div>
+
+                <label for="problemTitle">Problem Title</label>
+                <input id="problemTitle" th:field="*{problemTitle}" type="text" placeholder="Short summary of the issue" required>
+                <div class="field-error" th:if="${#fields.hasErrors('problemTitle')}" th:errors="*{problemTitle}"></div>
+
+                <label for="description">Description</label>
+                <textarea id="description" th:field="*{description}" rows="5" placeholder="Describe the issue in more detail"></textarea>
+
+                <label for="otherIssue">Other Issue</label>
+                <textarea id="otherIssue" th:field="*{otherIssue}" rows="3" placeholder="Only fill this if the issue category is OTHER"></textarea>
+
+                <button type="submit">Submit Ticket</button>
+            </form>
+        </div>
+    </main>
+</div>
+</body>
+</html>

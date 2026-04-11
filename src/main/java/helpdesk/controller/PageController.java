@@ -2,14 +2,21 @@ package helpdesk.controller;
 
 import helpdesk.dto.AdminTicketResponse;
 import helpdesk.dto.AdminTicketSummaryResponse;
+import helpdesk.dto.TicketFormRequest;
 import helpdesk.dto.TicketResponse;
 import helpdesk.service.TicketService;
 import helpdesk.service.UserService;
+import helpdesk.model.DeviceType;
+import helpdesk.model.IssueCategory;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.List;
 
@@ -77,5 +84,41 @@ public class PageController {
         model.addAttribute("tickets", tickets);
 
         return "tech-dashboard";
+    }
+
+    @GetMapping("/user/tickets/new")
+    public String newTicketPage(Authentication authentication, Model model) {
+        model.addAttribute("username", authentication.getName());
+        model.addAttribute("ticketForm", new TicketFormRequest());
+        model.addAttribute("deviceTypes", DeviceType.values());
+        model.addAttribute("issueCategories", IssueCategory.values());
+
+        return "user-ticket-form";
+    }
+
+    @PostMapping("/user/tickets/new")
+    public String submitTicket(@Valid @ModelAttribute("ticketForm") TicketFormRequest ticketForm,
+                               BindingResult bindingResult,
+                               Authentication authentication,
+                               Model model) {
+
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("username", authentication.getName());
+            model.addAttribute("deviceTypes", DeviceType.values());
+            model.addAttribute("issueCategories", IssueCategory.values());
+            return "user-ticket-form";
+        }
+
+        helpdesk.dto.CreateTicketRequest request = new helpdesk.dto.CreateTicketRequest();
+        request.setDeviceType(ticketForm.getDeviceType());
+        request.setIssueCategory(ticketForm.getIssueCategory());
+        request.setAssetNumber(ticketForm.getAssetNumber());
+        request.setProblemTitle(ticketForm.getProblemTitle());
+        request.setDescription(ticketForm.getDescription());
+        request.setOtherIssue(ticketForm.getOtherIssue());
+
+        ticketService.createTicket(authentication.getName(), request);
+
+        return "redirect:/user/dashboard";
     }
 }

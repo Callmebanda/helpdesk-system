@@ -122,3 +122,37 @@ th, td {
 th {
     background: #eef3f8;
 }
+
+select, textarea {
+    padding: 10px 12px;
+    font-size: 14px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.field-error {
+    color: #a40000;
+    font-size: 13px;
+    margin-top: -6px;
+    margin-bottom: 8px;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.primary-link-btn {
+    background: #0b3d91;
+    color: white;
+    padding: 10px 14px;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: bold;
+}
+
+.primary-link-btn:hover {
+    background: #092f70;
+}
