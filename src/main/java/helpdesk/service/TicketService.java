@@ -1,32 +1,30 @@
 package helpdesk.service;
 
 import helpdesk.dto.AdminTicketResponse;
+import helpdesk.dto.AdminTicketSummaryResponse;
 import helpdesk.dto.AssignTicketRequest;
 import helpdesk.dto.CreateTicketRequest;
 import helpdesk.dto.TicketResponse;
 import helpdesk.dto.UpdateTicketNotesRequest;
+import helpdesk.dto.UpdateTicketPriorityRequest;
+import helpdesk.model.ActivityType;
+import helpdesk.model.DeviceType;
+import helpdesk.model.IssueCategory;
 import helpdesk.model.Role;
 import helpdesk.model.Ticket;
+import helpdesk.model.TicketPriority;
 import helpdesk.model.TicketStatus;
 import helpdesk.model.User;
 import helpdesk.repository.TicketRepository;
 import helpdesk.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import helpdesk.dto.AdminTicketSummaryResponse;
-import helpdesk.model.DeviceType;
-import helpdesk.model.IssueCategory;
-import org.springframework.data.domain.Sort;
-import helpdesk.dto.AdminTicketSummaryResponse;
-import helpdesk.dto.UpdateTicketPriorityRequest;
-import helpdesk.model.DeviceType;
-import helpdesk.model.IssueCategory;
-import helpdesk.model.TicketPriority;
-import org.springframework.data.domain.Sort;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +32,7 @@ public class TicketService {
 
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
+    private final TicketActivityService ticketActivityService;
 
     @Transactional
     public TicketResponse createTicket(String username, CreateTicketRequest request) {
@@ -57,23 +56,16 @@ public class TicketService {
                 .build();
 
         Ticket savedTicket = ticketRepository.save(ticket);
+
+        ticketActivityService.logActivity(
+                savedTicket,
+                ActivityType.TICKET_CREATED,
+                username,
+                "Ticket created",
+                true
+        );
+
         return mapToUserResponse(savedTicket);
-    }
-    @Transactional
-    public AdminTicketResponse updatePriority(Long id, UpdateTicketPriorityRequest request) {
-        Ticket ticket = ticketRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Ticket not found"));
-
-        ticket.setPriority(request.getPriority());
-
-        LocalDateTime baseTime = ticket.getCreatedAt() != null
-                ? ticket.getCreatedAt()
-                : LocalDateTime.now();
-
-        ticket.setDueAt(calculateDueAt(request.getPriority(), baseTime));
-
-        Ticket savedTicket = ticketRepository.save(ticket);
-        return mapToAdminResponse(savedTicket);
     }
 
     @Transactional(readOnly = true)
@@ -96,7 +88,7 @@ public class TicketService {
     }
 
     @Transactional
-    public AdminTicketResponse updateStatus(Long id, TicketStatus status) {
+    public AdminTicketResponse updateStatus(Long id, TicketStatus status, String actorUsername) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Ticket not found"));
 
@@ -109,23 +101,60 @@ public class TicketService {
         }
 
         Ticket savedTicket = ticketRepository.save(ticket);
+
+        ticketActivityService.logActivity(
+                savedTicket,
+                ActivityType.STATUS_CHANGED,
+                actorUsername,
+                "Status changed to " + status,
+                true
+        );
+
         return mapToAdminResponse(savedTicket);
     }
 
     @Transactional
-    public AdminTicketResponse updateNotes(Long id, UpdateTicketNotesRequest request) {
+    public AdminTicketResponse updateNotes(Long id,
+                                           UpdateTicketNotesRequest request,
+                                           String actorUsername) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Ticket not found"));
+
+        String oldResolutionNote = ticket.getResolutionNote();
+        String oldInternalNote = ticket.getInternalNote();
 
         ticket.setResolutionNote(request.getResolutionNote());
         ticket.setInternalNote(request.getInternalNote());
 
         Ticket savedTicket = ticketRepository.save(ticket);
+
+        if (!Objects.equals(oldResolutionNote, savedTicket.getResolutionNote())) {
+            ticketActivityService.logActivity(
+                    savedTicket,
+                    ActivityType.RESOLUTION_NOTE_UPDATED,
+                    actorUsername,
+                    "Resolution note updated",
+                    true
+            );
+        }
+
+        if (!Objects.equals(oldInternalNote, savedTicket.getInternalNote())) {
+            ticketActivityService.logActivity(
+                    savedTicket,
+                    ActivityType.INTERNAL_NOTE_UPDATED,
+                    actorUsername,
+                    "Internal note updated",
+                    false
+            );
+        }
+
         return mapToAdminResponse(savedTicket);
     }
 
     @Transactional
-    public AdminTicketResponse assignTicket(Long id, AssignTicketRequest request) {
+    public AdminTicketResponse assignTicket(Long id,
+                                            AssignTicketRequest request,
+                                            String actorUsername) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Ticket not found"));
 
@@ -144,6 +173,15 @@ public class TicketService {
         ticket.setAssignedAt(LocalDateTime.now());
 
         Ticket savedTicket = ticketRepository.save(ticket);
+
+        ticketActivityService.logActivity(
+                savedTicket,
+                ActivityType.ASSIGNED,
+                actorUsername,
+                "Ticket assigned to technician " + technician.getUsername(),
+                true
+        );
+
         return mapToAdminResponse(savedTicket);
     }
 
@@ -159,7 +197,9 @@ public class TicketService {
     }
 
     @Transactional
-    public AdminTicketResponse updateAssignedTicketStatus(Long id, TicketStatus status, String technicianUsername) {
+    public AdminTicketResponse updateAssignedTicketStatus(Long id,
+                                                          TicketStatus status,
+                                                          String technicianUsername) {
         Ticket ticket = ticketRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Ticket not found"));
 
@@ -174,6 +214,15 @@ public class TicketService {
         }
 
         Ticket savedTicket = ticketRepository.save(ticket);
+
+        ticketActivityService.logActivity(
+                savedTicket,
+                ActivityType.STATUS_CHANGED,
+                technicianUsername,
+                "Status changed to " + status,
+                true
+        );
+
         return mapToAdminResponse(savedTicket);
     }
 
@@ -186,92 +235,65 @@ public class TicketService {
 
         validateAssignedTechnician(ticket, technicianUsername);
 
+        String oldResolutionNote = ticket.getResolutionNote();
+        String oldInternalNote = ticket.getInternalNote();
+
         ticket.setResolutionNote(request.getResolutionNote());
         ticket.setInternalNote(request.getInternalNote());
 
         Ticket savedTicket = ticketRepository.save(ticket);
+
+        if (!Objects.equals(oldResolutionNote, savedTicket.getResolutionNote())) {
+            ticketActivityService.logActivity(
+                    savedTicket,
+                    ActivityType.RESOLUTION_NOTE_UPDATED,
+                    technicianUsername,
+                    "Resolution note updated",
+                    true
+            );
+        }
+
+        if (!Objects.equals(oldInternalNote, savedTicket.getInternalNote())) {
+            ticketActivityService.logActivity(
+                    savedTicket,
+                    ActivityType.INTERNAL_NOTE_UPDATED,
+                    technicianUsername,
+                    "Internal note updated",
+                    false
+            );
+        }
+
         return mapToAdminResponse(savedTicket);
     }
 
-    private void validateAssignedTechnician(Ticket ticket, String technicianUsername) {
-        if (ticket.getAssignedTechnician() == null) {
-            throw new RuntimeException("Ticket is not assigned to any technician");
-        }
+    @Transactional
+    public AdminTicketResponse updatePriority(Long id,
+                                              UpdateTicketPriorityRequest request,
+                                              String actorUsername) {
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Ticket not found"));
 
-        if (!ticket.getAssignedTechnician().getUsername().equals(technicianUsername)) {
-            throw new RuntimeException("You are not assigned to this ticket");
-        }
+        ticket.setPriority(request.getPriority());
+
+        LocalDateTime baseTime = ticket.getCreatedAt() != null
+                ? ticket.getCreatedAt()
+                : LocalDateTime.now();
+
+        ticket.setDueAt(calculateDueAt(request.getPriority(), baseTime));
+
+        Ticket savedTicket = ticketRepository.save(ticket);
+
+        ticketActivityService.logActivity(
+                savedTicket,
+                ActivityType.PRIORITY_CHANGED,
+                actorUsername,
+                "Priority changed to " + request.getPriority(),
+                true
+        );
+
+        return mapToAdminResponse(savedTicket);
     }
 
-    private TicketResponse mapToUserResponse(Ticket ticket) {
-        User user = ticket.getUser();
-
-        return TicketResponse.builder()
-                .id(ticket.getId())
-                .username(user.getUsername())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .department(user.getDepartment())
-                .officeNumber(user.getOfficeNumber())
-                .floorNumber(user.getFloorNumber())
-                .telephoneExtension(user.getTelephoneExtension())
-                .building(user.getBuilding())
-                .deviceType(ticket.getDeviceType())
-                .issueCategory(ticket.getIssueCategory())
-                .assetNumber(ticket.getAssetNumber())
-                .problemTitle(ticket.getProblemTitle())
-                .description(ticket.getDescription())
-                .otherIssue(ticket.getOtherIssue())
-                .resolutionNote(ticket.getResolutionNote())
-                .assignedTechnicianUsername(
-                        ticket.getAssignedTechnician() != null ? ticket.getAssignedTechnician().getUsername() : null
-                )
-                .assignedAt(ticket.getAssignedAt())
-                .status(ticket.getStatus())
-                .createdAt(ticket.getCreatedAt())
-                .updatedAt(ticket.getUpdatedAt())
-                .resolvedAt(ticket.getResolvedAt())
-                .priority(ticket.getPriority())
-                .dueAt(ticket.getDueAt())
-                .overdue(isOverdue(ticket))
-                .build();
-    }
-
-    private AdminTicketResponse mapToAdminResponse(Ticket ticket) {
-        User user = ticket.getUser();
-        User technician = ticket.getAssignedTechnician();
-
-        return AdminTicketResponse.builder()
-                .id(ticket.getId())
-                .username(user.getUsername())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .department(user.getDepartment())
-                .officeNumber(user.getOfficeNumber())
-                .floorNumber(user.getFloorNumber())
-                .telephoneExtension(user.getTelephoneExtension())
-                .building(user.getBuilding())
-                .deviceType(ticket.getDeviceType())
-                .issueCategory(ticket.getIssueCategory())
-                .assetNumber(ticket.getAssetNumber())
-                .problemTitle(ticket.getProblemTitle())
-                .description(ticket.getDescription())
-                .otherIssue(ticket.getOtherIssue())
-                .resolutionNote(ticket.getResolutionNote())
-                .internalNote(ticket.getInternalNote())
-                .assignedTechnicianUsername(technician != null ? technician.getUsername() : null)
-                .assignedTechnicianFirstName(technician != null ? technician.getFirstName() : null)
-                .assignedTechnicianLastName(technician != null ? technician.getLastName() : null)
-                .assignedAt(ticket.getAssignedAt())
-                .status(ticket.getStatus())
-                .createdAt(ticket.getCreatedAt())
-                .updatedAt(ticket.getUpdatedAt())
-                .resolvedAt(ticket.getResolvedAt())
-                .priority(ticket.getPriority())
-                .dueAt(ticket.getDueAt())
-                .overdue(isOverdue(ticket))
-                .build();
-    }
     @Transactional(readOnly = true)
     public AdminTicketSummaryResponse getTicketSummary() {
         List<Ticket> tickets = ticketRepository.findAll();
@@ -332,6 +354,17 @@ public class TicketService {
                 .map(this::mapToAdminResponse)
                 .toList();
     }
+
+    private void validateAssignedTechnician(Ticket ticket, String technicianUsername) {
+        if (ticket.getAssignedTechnician() == null) {
+            throw new RuntimeException("Ticket is not assigned to any technician");
+        }
+
+        if (!ticket.getAssignedTechnician().getUsername().equals(technicianUsername)) {
+            throw new RuntimeException("You are not assigned to this ticket");
+        }
+    }
+
     private LocalDateTime calculateDueAt(TicketPriority priority, LocalDateTime baseTime) {
         return switch (priority) {
             case LOW -> baseTime.plusHours(72);
@@ -347,4 +380,75 @@ public class TicketService {
                 && ticket.getDueAt().isBefore(LocalDateTime.now());
     }
 
+    private TicketResponse mapToUserResponse(Ticket ticket) {
+        User user = ticket.getUser();
+
+        return TicketResponse.builder()
+                .id(ticket.getId())
+                .username(user.getUsername())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .department(user.getDepartment())
+                .officeNumber(user.getOfficeNumber())
+                .floorNumber(user.getFloorNumber())
+                .telephoneExtension(user.getTelephoneExtension())
+                .building(user.getBuilding())
+                .deviceType(ticket.getDeviceType())
+                .issueCategory(ticket.getIssueCategory())
+                .assetNumber(ticket.getAssetNumber())
+                .problemTitle(ticket.getProblemTitle())
+                .description(ticket.getDescription())
+                .otherIssue(ticket.getOtherIssue())
+                .resolutionNote(ticket.getResolutionNote())
+                .assignedTechnicianUsername(
+                        ticket.getAssignedTechnician() != null
+                                ? ticket.getAssignedTechnician().getUsername()
+                                : null
+                )
+                .assignedAt(ticket.getAssignedAt())
+                .status(ticket.getStatus())
+                .createdAt(ticket.getCreatedAt())
+                .updatedAt(ticket.getUpdatedAt())
+                .resolvedAt(ticket.getResolvedAt())
+                .priority(ticket.getPriority())
+                .dueAt(ticket.getDueAt())
+                .overdue(isOverdue(ticket))
+                .build();
+    }
+
+    private AdminTicketResponse mapToAdminResponse(Ticket ticket) {
+        User user = ticket.getUser();
+        User technician = ticket.getAssignedTechnician();
+
+        return AdminTicketResponse.builder()
+                .id(ticket.getId())
+                .username(user.getUsername())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .department(user.getDepartment())
+                .officeNumber(user.getOfficeNumber())
+                .floorNumber(user.getFloorNumber())
+                .telephoneExtension(user.getTelephoneExtension())
+                .building(user.getBuilding())
+                .deviceType(ticket.getDeviceType())
+                .issueCategory(ticket.getIssueCategory())
+                .assetNumber(ticket.getAssetNumber())
+                .problemTitle(ticket.getProblemTitle())
+                .description(ticket.getDescription())
+                .otherIssue(ticket.getOtherIssue())
+                .resolutionNote(ticket.getResolutionNote())
+                .internalNote(ticket.getInternalNote())
+                .assignedTechnicianUsername(technician != null ? technician.getUsername() : null)
+                .assignedTechnicianFirstName(technician != null ? technician.getFirstName() : null)
+                .assignedTechnicianLastName(technician != null ? technician.getLastName() : null)
+                .assignedAt(ticket.getAssignedAt())
+                .status(ticket.getStatus())
+                .createdAt(ticket.getCreatedAt())
+                .updatedAt(ticket.getUpdatedAt())
+                .resolvedAt(ticket.getResolvedAt())
+                .priority(ticket.getPriority())
+                .dueAt(ticket.getDueAt())
+                .overdue(isOverdue(ticket))
+                .build();
+    }
 }

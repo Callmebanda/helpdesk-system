@@ -1,0 +1,11 @@
+package helpdesk.model;
+
+public enum ActivityType {
+    TICKET_CREATED,
+    STATUS_CHANGED,
+    PRIORITY_CHANGED,
+    ASSIGNED,
+    RESOLUTION_NOTE_UPDATED,
+    INTERNAL_NOTE_UPDATED,
+    KNOWLEDGE_PUBLISHED
+}

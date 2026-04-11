@@ -1,7 +1,9 @@
 package helpdesk.controller;
 
 import helpdesk.dto.CreateTicketRequest;
+import helpdesk.dto.TicketActivityResponse;
 import helpdesk.dto.TicketResponse;
+import helpdesk.service.TicketActivityService;
 import helpdesk.service.TicketService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +19,7 @@ import java.util.List;
 public class UserTicketController {
 
     private final TicketService ticketService;
+    private final TicketActivityService ticketActivityService;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -28,5 +31,11 @@ public class UserTicketController {
     @GetMapping
     public List<TicketResponse> getMyTickets(Principal principal) {
         return ticketService.getMyTickets(principal.getName());
+    }
+
+    @GetMapping("/{id}/activity")
+    public List<TicketActivityResponse> getMyTicketActivity(@PathVariable Long id,
+                                                            Principal principal) {
+        return ticketActivityService.getUserVisibleActivities(id, principal.getName());
     }
 }

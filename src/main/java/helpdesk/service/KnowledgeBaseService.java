@@ -1,6 +1,7 @@
 package helpdesk.service;
 
 import helpdesk.dto.KnowledgeArticleResponse;
+import helpdesk.model.ActivityType;
 import helpdesk.model.DeviceType;
 import helpdesk.model.IssueCategory;
 import helpdesk.model.KnowledgeArticle;
@@ -20,6 +21,7 @@ public class KnowledgeBaseService {
 
     private final KnowledgeArticleRepository knowledgeArticleRepository;
     private final TicketRepository ticketRepository;
+    private final TicketActivityService ticketActivityService;
 
     @Transactional
     public KnowledgeArticleResponse publishFromTicket(Long ticketId, String publishedBy) {
@@ -49,6 +51,15 @@ public class KnowledgeBaseService {
                 .build();
 
         KnowledgeArticle savedArticle = knowledgeArticleRepository.save(article);
+
+        ticketActivityService.logActivity(
+                ticket,
+                ActivityType.KNOWLEDGE_PUBLISHED,
+                publishedBy,
+                "Published to knowledge base",
+                false
+        );
+
         return mapToResponse(savedArticle);
     }
 
@@ -57,7 +68,9 @@ public class KnowledgeBaseService {
         List<KnowledgeArticle> articles;
 
         if (deviceType != null && issueCategory != null) {
-            articles = knowledgeArticleRepository.findByDeviceTypeAndIssueCategoryOrderByCreatedAtDesc(deviceType, issueCategory);
+            articles = knowledgeArticleRepository.findByDeviceTypeAndIssueCategoryOrderByCreatedAtDesc(
+                    deviceType, issueCategory
+            );
         } else if (deviceType != null) {
             articles = knowledgeArticleRepository.findByDeviceTypeOrderByCreatedAtDesc(deviceType);
         } else if (issueCategory != null) {
@@ -87,13 +100,13 @@ public class KnowledgeBaseService {
         }
 
         if (ticket.getOtherIssue() != null && !ticket.getOtherIssue().isBlank()) {
-            if (!symptoms.isEmpty()) {
+            if (symptoms.length() > 0) {
                 symptoms.append("\n");
             }
             symptoms.append("Other issue: ").append(ticket.getOtherIssue());
         }
 
-        if (symptoms.isEmpty()) {
+        if (symptoms.length() == 0) {
             symptoms.append(ticket.getProblemTitle());
         }
 

@@ -1,23 +1,22 @@
 package helpdesk.controller;
 
 import helpdesk.dto.AdminTicketResponse;
+import helpdesk.dto.AdminTicketSummaryResponse;
 import helpdesk.dto.AssignTicketRequest;
+import helpdesk.dto.TicketActivityResponse;
 import helpdesk.dto.UpdateTicketNotesRequest;
-import helpdesk.model.TicketStatus;
-import helpdesk.service.TicketService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.*;
-import helpdesk.dto.AdminTicketSummaryResponse;
-import helpdesk.model.DeviceType;
-import helpdesk.model.IssueCategory;
-import helpdesk.dto.AdminTicketSummaryResponse;
 import helpdesk.dto.UpdateTicketPriorityRequest;
 import helpdesk.model.DeviceType;
 import helpdesk.model.IssueCategory;
 import helpdesk.model.TicketPriority;
+import helpdesk.model.TicketStatus;
+import helpdesk.service.TicketActivityService;
+import helpdesk.service.TicketService;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
 
+import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 
@@ -27,6 +26,7 @@ import java.util.Map;
 public class AdminTicketController {
 
     private final TicketService ticketService;
+    private final TicketActivityService ticketActivityService;
 
     @GetMapping
     public List<AdminTicketResponse> getAllTickets() {
@@ -35,22 +35,26 @@ public class AdminTicketController {
 
     @PatchMapping("/{id}/status")
     public AdminTicketResponse updateStatus(@PathVariable Long id,
-                                            @RequestBody Map<String, String> request) {
+                                            @RequestBody Map<String, String> request,
+                                            Principal principal) {
         TicketStatus status = TicketStatus.valueOf(request.get("status"));
-        return ticketService.updateStatus(id, status);
+        return ticketService.updateStatus(id, status, principal.getName());
     }
 
     @PatchMapping("/{id}/notes")
     public AdminTicketResponse updateNotes(@PathVariable Long id,
-                                           @RequestBody UpdateTicketNotesRequest request) {
-        return ticketService.updateNotes(id, request);
+                                           @RequestBody UpdateTicketNotesRequest request,
+                                           Principal principal) {
+        return ticketService.updateNotes(id, request, principal.getName());
     }
 
     @PatchMapping("/{id}/assign")
     public AdminTicketResponse assignTicket(@PathVariable Long id,
-                                            @Valid @RequestBody AssignTicketRequest request) {
-        return ticketService.assignTicket(id, request);
+                                            @Valid @RequestBody AssignTicketRequest request,
+                                            Principal principal) {
+        return ticketService.assignTicket(id, request, principal.getName());
     }
+
     @GetMapping("/summary")
     public AdminTicketSummaryResponse getTicketSummary() {
         return ticketService.getTicketSummary();
@@ -76,9 +80,16 @@ public class AdminTicketController {
                 overdue
         );
     }
+
     @PatchMapping("/{id}/priority")
     public AdminTicketResponse updatePriority(@PathVariable Long id,
-                                              @Valid @RequestBody UpdateTicketPriorityRequest request) {
-        return ticketService.updatePriority(id, request);
+                                              @Valid @RequestBody UpdateTicketPriorityRequest request,
+                                              Principal principal) {
+        return ticketService.updatePriority(id, request, principal.getName());
+    }
+
+    @GetMapping("/{id}/activity")
+    public List<TicketActivityResponse> getTicketActivities(@PathVariable Long id) {
+        return ticketActivityService.getAdminActivities(id);
     }
 }

@@ -1,8 +1,10 @@
 package helpdesk.controller;
 
 import helpdesk.dto.AdminTicketResponse;
+import helpdesk.dto.TicketActivityResponse;
 import helpdesk.dto.UpdateTicketNotesRequest;
 import helpdesk.model.TicketStatus;
+import helpdesk.service.TicketActivityService;
 import helpdesk.service.TicketService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -17,6 +19,7 @@ import java.util.Map;
 public class TechTicketController {
 
     private final TicketService ticketService;
+    private final TicketActivityService ticketActivityService;
 
     @GetMapping
     public List<AdminTicketResponse> getAssignedTickets(Principal principal) {
@@ -36,5 +39,11 @@ public class TechTicketController {
                                                          @RequestBody UpdateTicketNotesRequest request,
                                                          Principal principal) {
         return ticketService.updateAssignedTicketNotes(id, request, principal.getName());
+    }
+
+    @GetMapping("/{id}/activity")
+    public List<TicketActivityResponse> getAssignedTicketActivity(@PathVariable Long id,
+                                                                  Principal principal) {
+        return ticketActivityService.getTechnicianActivities(id, principal.getName());
     }
 }
