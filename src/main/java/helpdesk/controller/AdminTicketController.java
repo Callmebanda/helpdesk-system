@@ -11,6 +11,12 @@ import org.springframework.web.bind.annotation.*;
 import helpdesk.dto.AdminTicketSummaryResponse;
 import helpdesk.model.DeviceType;
 import helpdesk.model.IssueCategory;
+import helpdesk.dto.AdminTicketSummaryResponse;
+import helpdesk.dto.UpdateTicketPriorityRequest;
+import helpdesk.model.DeviceType;
+import helpdesk.model.IssueCategory;
+import helpdesk.model.TicketPriority;
+import jakarta.validation.Valid;
 
 import java.util.List;
 import java.util.Map;
@@ -55,15 +61,24 @@ public class AdminTicketController {
             @RequestParam(required = false) TicketStatus status,
             @RequestParam(required = false) DeviceType deviceType,
             @RequestParam(required = false) IssueCategory issueCategory,
+            @RequestParam(required = false) TicketPriority priority,
             @RequestParam(required = false) String assignedTechnicianUsername,
-            @RequestParam(required = false) String department
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) Boolean overdue
     ) {
         return ticketService.searchTickets(
                 status,
                 deviceType,
                 issueCategory,
+                priority,
                 assignedTechnicianUsername,
-                department
+                department,
+                overdue
         );
+    }
+    @PatchMapping("/{id}/priority")
+    public AdminTicketResponse updatePriority(@PathVariable Long id,
+                                              @Valid @RequestBody UpdateTicketPriorityRequest request) {
+        return ticketService.updatePriority(id, request);
     }
 }

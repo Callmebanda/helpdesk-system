@@ -58,6 +58,13 @@ public class Ticket {
     @Column(nullable = false)
     private TicketStatus status;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private TicketPriority priority;
+
+    @Column(nullable = false)
+    private LocalDateTime dueAt;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 

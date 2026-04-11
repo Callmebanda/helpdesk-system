@@ -1,6 +1,7 @@
 package helpdesk.dto;
 
 import helpdesk.model.DeviceType;
+import helpdesk.model.TicketPriority;
 import helpdesk.model.TicketStatus;
 import lombok.Builder;
 import lombok.Getter;
@@ -33,4 +34,7 @@ public class TicketResponse {
     private String resolutionNote;
     private String assignedTechnicianUsername;
     private LocalDateTime assignedAt;
+    private TicketPriority priority;
+    private LocalDateTime dueAt;
+    private boolean overdue;
 }

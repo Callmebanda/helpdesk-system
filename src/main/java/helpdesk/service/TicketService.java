@@ -18,6 +18,12 @@ import helpdesk.dto.AdminTicketSummaryResponse;
 import helpdesk.model.DeviceType;
 import helpdesk.model.IssueCategory;
 import org.springframework.data.domain.Sort;
+import helpdesk.dto.AdminTicketSummaryResponse;
+import helpdesk.dto.UpdateTicketPriorityRequest;
+import helpdesk.model.DeviceType;
+import helpdesk.model.IssueCategory;
+import helpdesk.model.TicketPriority;
+import org.springframework.data.domain.Sort;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -34,6 +40,9 @@ public class TicketService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
+        TicketPriority defaultPriority = TicketPriority.MEDIUM;
+        LocalDateTime now = LocalDateTime.now();
+
         Ticket ticket = Ticket.builder()
                 .user(user)
                 .deviceType(request.getDeviceType())
@@ -42,11 +51,29 @@ public class TicketService {
                 .problemTitle(request.getProblemTitle())
                 .description(request.getDescription())
                 .otherIssue(request.getOtherIssue())
+                .priority(defaultPriority)
+                .dueAt(calculateDueAt(defaultPriority, now))
                 .status(TicketStatus.PENDING)
                 .build();
 
         Ticket savedTicket = ticketRepository.save(ticket);
         return mapToUserResponse(savedTicket);
+    }
+    @Transactional
+    public AdminTicketResponse updatePriority(Long id, UpdateTicketPriorityRequest request) {
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+
+        ticket.setPriority(request.getPriority());
+
+        LocalDateTime baseTime = ticket.getCreatedAt() != null
+                ? ticket.getCreatedAt()
+                : LocalDateTime.now();
+
+        ticket.setDueAt(calculateDueAt(request.getPriority(), baseTime));
+
+        Ticket savedTicket = ticketRepository.save(ticket);
+        return mapToAdminResponse(savedTicket);
     }
 
     @Transactional(readOnly = true)
@@ -204,6 +231,9 @@ public class TicketService {
                 .createdAt(ticket.getCreatedAt())
                 .updatedAt(ticket.getUpdatedAt())
                 .resolvedAt(ticket.getResolvedAt())
+                .priority(ticket.getPriority())
+                .dueAt(ticket.getDueAt())
+                .overdue(isOverdue(ticket))
                 .build();
     }
 
@@ -237,6 +267,9 @@ public class TicketService {
                 .createdAt(ticket.getCreatedAt())
                 .updatedAt(ticket.getUpdatedAt())
                 .resolvedAt(ticket.getResolvedAt())
+                .priority(ticket.getPriority())
+                .dueAt(ticket.getDueAt())
+                .overdue(isOverdue(ticket))
                 .build();
     }
     @Transactional(readOnly = true)
@@ -259,6 +292,9 @@ public class TicketService {
         long unassignedTickets = tickets.stream()
                 .filter(ticket -> ticket.getAssignedTechnician() == null)
                 .count();
+        long overdueTickets = tickets.stream()
+                .filter(this::isOverdue)
+                .count();
 
         return AdminTicketSummaryResponse.builder()
                 .totalTickets(totalTickets)
@@ -267,6 +303,7 @@ public class TicketService {
                 .resolvedTickets(resolvedTickets)
                 .assignedTickets(assignedTickets)
                 .unassignedTickets(unassignedTickets)
+                .overdueTickets(overdueTickets)
                 .build();
     }
 
@@ -274,21 +311,40 @@ public class TicketService {
     public List<AdminTicketResponse> searchTickets(TicketStatus status,
                                                    DeviceType deviceType,
                                                    IssueCategory issueCategory,
+                                                   TicketPriority priority,
                                                    String assignedTechnicianUsername,
-                                                   String department) {
+                                                   String department,
+                                                   Boolean overdue) {
 
         return ticketRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
                 .stream()
                 .filter(ticket -> status == null || ticket.getStatus() == status)
                 .filter(ticket -> deviceType == null || ticket.getDeviceType() == deviceType)
                 .filter(ticket -> issueCategory == null || ticket.getIssueCategory() == issueCategory)
+                .filter(ticket -> priority == null || ticket.getPriority() == priority)
                 .filter(ticket -> assignedTechnicianUsername == null || assignedTechnicianUsername.isBlank()
                         || (ticket.getAssignedTechnician() != null
                         && ticket.getAssignedTechnician().getUsername().equalsIgnoreCase(assignedTechnicianUsername)))
                 .filter(ticket -> department == null || department.isBlank()
                         || (ticket.getUser().getDepartment() != null
                         && ticket.getUser().getDepartment().equalsIgnoreCase(department)))
+                .filter(ticket -> overdue == null || isOverdue(ticket) == overdue)
                 .map(this::mapToAdminResponse)
                 .toList();
     }
+    private LocalDateTime calculateDueAt(TicketPriority priority, LocalDateTime baseTime) {
+        return switch (priority) {
+            case LOW -> baseTime.plusHours(72);
+            case MEDIUM -> baseTime.plusHours(24);
+            case HIGH -> baseTime.plusHours(8);
+            case CRITICAL -> baseTime.plusHours(2);
+        };
+    }
+
+    private boolean isOverdue(Ticket ticket) {
+        return ticket.getStatus() != TicketStatus.RESOLVED
+                && ticket.getDueAt() != null
+                && ticket.getDueAt().isBefore(LocalDateTime.now());
+    }
+
 }
