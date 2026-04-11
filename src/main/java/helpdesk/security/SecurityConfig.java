@@ -23,10 +23,26 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/admin/**").hasAuthority("SUPERVISOR")
-                        .requestMatchers("/api/tech/**").hasAnyAuthority("TECHNICIAN", "SUPERVISOR")
-                        .requestMatchers("/api/user/**").hasAnyAuthority("USER", "TECHNICIAN", "SUPERVISOR")
+                        .requestMatchers(
+                                "/login",
+                                "/css/**",
+                                "/js/**",
+                                "/images/**"
+                        ).permitAll()
+                        .requestMatchers("/admin/**", "/api/admin/**").hasAuthority("SUPERVISOR")
+                        .requestMatchers("/tech/**", "/api/tech/**").hasAnyAuthority("TECHNICIAN", "SUPERVISOR")
+                        .requestMatchers("/user/**", "/api/user/**").hasAnyAuthority("USER", "TECHNICIAN", "SUPERVISOR")
+                        .requestMatchers("/dashboard").authenticated()
                         .anyRequest().authenticated()
+                )
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .defaultSuccessUrl("/dashboard", true)
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .logoutSuccessUrl("/login?logout")
+                        .permitAll()
                 )
                 .httpBasic(Customizer.withDefaults());
 
