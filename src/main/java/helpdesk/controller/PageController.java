@@ -174,6 +174,45 @@ public class PageController {
         return "admin-ticket-detail";
     }
 
+    @GetMapping("/tech/tickets/{id}")
+    public String techTicketDetail(@PathVariable Long id,
+                                   Authentication authentication,
+                                   Model model) {
+        String username = authentication.getName();
+
+        AdminTicketResponse ticket = ticketService.getAssignedTicketById(id, username);
+        List<TicketActivityResponse> activities =
+                ticketActivityService.getTechnicianActivities(id, username);
+
+        model.addAttribute("username", username);
+        model.addAttribute("ticket", ticket);
+        model.addAttribute("activities", activities);
+        model.addAttribute("statuses", TicketStatus.values());
+
+        return "tech-ticket-detail";
+    }
+
+    @PostMapping("/tech/tickets/{id}/status")
+    public String updateTechTicketStatusFromPage(@PathVariable Long id,
+                                                 @RequestParam TicketStatus status,
+                                                 Authentication authentication) {
+        ticketService.updateAssignedTicketStatus(id, status, authentication.getName());
+        return "redirect:/tech/tickets/" + id;
+    }
+
+    @PostMapping("/tech/tickets/{id}/notes")
+    public String updateTechTicketNotesFromPage(@PathVariable Long id,
+                                                @RequestParam(required = false) String resolutionNote,
+                                                @RequestParam(required = false) String internalNote,
+                                                Authentication authentication) {
+        UpdateTicketNotesRequest request = new UpdateTicketNotesRequest();
+        request.setResolutionNote(resolutionNote);
+        request.setInternalNote(internalNote);
+
+        ticketService.updateAssignedTicketNotes(id, request, authentication.getName());
+        return "redirect:/tech/tickets/" + id;
+    }
+
     @PostMapping("/admin/tickets/{id}/assign")
     public String assignTicketFromPage(@PathVariable Long id,
                                        @RequestParam String technicianUsername,

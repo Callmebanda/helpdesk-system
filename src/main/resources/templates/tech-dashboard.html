@@ -30,6 +30,7 @@
                     <th>Status</th>
                     <th>Priority</th>
                     <th>Due At</th>
+                    <th>Action</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -42,9 +43,12 @@
                     <td th:text="${ticket.status}"></td>
                     <td th:text="${ticket.priority}"></td>
                     <td th:text="${ticket.dueAt}"></td>
+                    <td>
+                        <a th:href="@{'/tech/tickets/' + ${ticket.id}}" class="table-link-btn">View</a>
+                    </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(tickets)}">
-                    <td colspan="8">No assigned tickets found.</td>
+                    <td colspan="9">No assigned tickets found.</td>
                 </tr>
                 </tbody>
             </table>

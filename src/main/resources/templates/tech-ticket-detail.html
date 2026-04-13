@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Technician Ticket Detail</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="layout">
+    <header class="topbar">
+        <h1>Technician Ticket Detail</h1>
+        <div>
+            <span th:text="'Signed in as: ' + ${username}"></span>
+            <a href="/tech/dashboard" class="logout-btn">Back</a>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+    </header>
+
+    <main class="content">
+        <div class="card">
+            <h2 th:text="'Ticket #' + ${ticket.id}"></h2>
+
+            <div class="detail-grid">
+                <div><strong>User:</strong> <span th:text="${ticket.username}"></span></div>
+                <div><strong>Department:</strong> <span th:text="${ticket.department}"></span></div>
+                <div><strong>Office:</strong> <span th:text="${ticket.officeNumber}"></span></div>
+                <div><strong>Floor:</strong> <span th:text="${ticket.floorNumber}"></span></div>
+                <div><strong>Extension:</strong> <span th:text="${ticket.telephoneExtension}"></span></div>
+                <div><strong>Building:</strong> <span th:text="${ticket.building}"></span></div>
+                <div><strong>Device:</strong> <span th:text="${ticket.deviceType}"></span></div>
+                <div><strong>Issue Category:</strong> <span th:text="${ticket.issueCategory}"></span></div>
+                <div><strong>Asset Number:</strong> <span th:text="${ticket.assetNumber}"></span></div>
+                <div><strong>Status:</strong> <span th:text="${ticket.status}"></span></div>
+                <div><strong>Priority:</strong> <span th:text="${ticket.priority}"></span></div>
+                <div><strong>Assigned Technician:</strong> <span th:text="${ticket.assignedTechnicianUsername}"></span></div>
+                <div><strong>Created At:</strong> <span th:text="${ticket.createdAt}"></span></div>
+                <div><strong>Due At:</strong> <span th:text="${ticket.dueAt}"></span></div>
+                <div><strong>Overdue:</strong> <span th:text="${ticket.overdue} ? 'Yes' : 'No'"></span></div>
+            </div>
+
+            <div class="detail-block">
+                <strong>Problem Title:</strong>
+                <p th:text="${ticket.problemTitle}"></p>
+            </div>
+
+            <div class="detail-block">
+                <strong>Description:</strong>
+                <p th:text="${ticket.description} ?: 'No description provided.'"></p>
+            </div>
+
+            <div class="detail-block">
+                <strong>Other Issue:</strong>
+                <p th:text="${ticket.otherIssue} ?: 'None'"></p>
+            </div>
+        </div>
+
+        <div class="action-grid">
+            <div class="card">
+                <h2>Update Status</h2>
+                <form th:action="@{'/tech/tickets/' + ${ticket.id} + '/status'}" method="post" class="form">
+                    <label for="status">Status</label>
+                    <select id="status" name="status" required>
+                        <option th:each="statusValue : ${statuses}"
+                                th:value="${statusValue}"
+                                th:text="${statusValue}"
+                                th:selected="${ticket.status == statusValue}">
+                        </option>
+                    </select>
+                    <button type="submit">Update Status</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Update Notes</h2>
+                <form th:action="@{'/tech/tickets/' + ${ticket.id} + '/notes'}" method="post" class="form">
+                    <label for="resolutionNote">Resolution Note</label>
+                    <textarea id="resolutionNote" name="resolutionNote" rows="4"
+                              th:text="${ticket.resolutionNote}"></textarea>
+
+                    <label for="internalNote">Internal Note</label>
+                    <textarea id="internalNote" name="internalNote" rows="4"
+                              th:text="${ticket.internalNote}"></textarea>
+
+                    <button type="submit">Save Notes</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Activity Timeline</h2>
+
+            <div th:if="${#lists.isEmpty(activities)}">
+                <p>No activity recorded yet.</p>
+            </div>
+
+            <div th:each="activity : ${activities}" class="timeline-item">
+                <div class="timeline-time" th:text="${activity.createdAt}"></div>
+                <div class="timeline-content">
+                    <strong th:text="${activity.activityType}"></strong>
+                    <p th:text="${activity.description}"></p>
+                    <small th:text="'By: ' + ${activity.actorUsername}"></small>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>
