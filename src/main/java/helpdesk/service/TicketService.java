@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import helpdesk.dto.UserTicketSummaryResponse;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -318,6 +319,55 @@ public class TicketService {
                 .resolved(resolved)
                 .overdue(overdue)
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public UserTicketSummaryResponse getUserTicketSummary(String username) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        List<Ticket> tickets = ticketRepository.findByUser(user);
+
+        long totalTickets = tickets.size();
+        long pendingTickets = tickets.stream()
+                .filter(ticket -> ticket.getStatus() == TicketStatus.PENDING)
+                .count();
+        long inProgressTickets = tickets.stream()
+                .filter(ticket -> ticket.getStatus() == TicketStatus.IN_PROGRESS)
+                .count();
+        long resolvedTickets = tickets.stream()
+                .filter(ticket -> ticket.getStatus() == TicketStatus.RESOLVED)
+                .count();
+        long overdueTickets = tickets.stream()
+                .filter(this::isOverdue)
+                .count();
+
+        return UserTicketSummaryResponse.builder()
+                .totalTickets(totalTickets)
+                .pendingTickets(pendingTickets)
+                .inProgressTickets(inProgressTickets)
+                .resolvedTickets(resolvedTickets)
+                .overdueTickets(overdueTickets)
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<TicketResponse> searchMyTickets(String username,
+                                                TicketStatus status,
+                                                DeviceType deviceType,
+                                                TicketPriority priority,
+                                                Boolean overdue) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        return ticketRepository.findByUser(user)
+                .stream()
+                .filter(ticket -> status == null || ticket.getStatus() == status)
+                .filter(ticket -> deviceType == null || ticket.getDeviceType() == deviceType)
+                .filter(ticket -> priority == null || ticket.getPriority() == priority)
+                .filter(ticket -> overdue == null || isOverdue(ticket) == overdue)
+                .map(this::mapToUserResponse)
+                .toList();
     }
 
     @Transactional(readOnly = true)

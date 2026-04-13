@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import helpdesk.dto.KnowledgeArticleResponse;
+import helpdesk.dto.UserTicketSummaryResponse;
 
 import java.util.List;
 
@@ -58,12 +59,36 @@ public class PageController {
     }
 
     @GetMapping("/user/dashboard")
-    public String userDashboard(Authentication authentication, Model model) {
+    public String userDashboard(Authentication authentication,
+                                Model model,
+                                @RequestParam(required = false) TicketStatus status,
+                                @RequestParam(required = false) DeviceType deviceType,
+                                @RequestParam(required = false) TicketPriority priority,
+                                @RequestParam(required = false) Boolean overdue) {
         String username = authentication.getName();
-        List<TicketResponse> tickets = ticketService.getMyTickets(username);
+
+        List<TicketResponse> tickets = ticketService.searchMyTickets(
+                username,
+                status,
+                deviceType,
+                priority,
+                overdue
+        );
+
+        UserTicketSummaryResponse summary = ticketService.getUserTicketSummary(username);
 
         model.addAttribute("username", username);
         model.addAttribute("tickets", tickets);
+        model.addAttribute("summary", summary);
+
+        model.addAttribute("statuses", TicketStatus.values());
+        model.addAttribute("deviceTypes", DeviceType.values());
+        model.addAttribute("priorities", TicketPriority.values());
+
+        model.addAttribute("selectedStatus", status);
+        model.addAttribute("selectedDeviceType", deviceType);
+        model.addAttribute("selectedPriority", priority);
+        model.addAttribute("selectedOverdue", overdue);
 
         return "user-dashboard";
     }
