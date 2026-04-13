@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Ticket Details</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="layout">
+    <header class="topbar">
+        <h1>Ticket Details</h1>
+        <div>
+            <span th:text="'Signed in as: ' + ${username}"></span>
+            <a href="/user/dashboard" class="logout-btn">Back</a>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+    </header>
+
+    <main class="content">
+        <div class="card">
+            <h2 th:text="'Ticket #' + ${ticket.id}"></h2>
+
+            <div class="detail-grid">
+                <div><strong>Device:</strong> <span th:text="${ticket.deviceType}"></span></div>
+                <div><strong>Issue Category:</strong> <span th:text="${ticket.issueCategory}"></span></div>
+                <div><strong>Asset Number:</strong> <span th:text="${ticket.assetNumber}"></span></div>
+                <div><strong>Status:</strong> <span th:text="${ticket.status}"></span></div>
+                <div><strong>Priority:</strong> <span th:text="${ticket.priority}"></span></div>
+                <div><strong>Assigned Technician:</strong> <span th:text="${ticket.assignedTechnicianUsername} ?: 'Not assigned'"></span></div>
+                <div><strong>Created At:</strong> <span th:text="${ticket.createdAt}"></span></div>
+                <div><strong>Due At:</strong> <span th:text="${ticket.dueAt}"></span></div>
+                <div><strong>Overdue:</strong> <span th:text="${ticket.overdue} ? 'Yes' : 'No'"></span></div>
+            </div>
+
+            <div class="detail-block">
+                <strong>Problem Title:</strong>
+                <p th:text="${ticket.problemTitle}"></p>
+            </div>
+
+            <div class="detail-block">
+                <strong>Description:</strong>
+                <p th:text="${ticket.description} ?: 'No description provided.'"></p>
+            </div>
+
+            <div class="detail-block">
+                <strong>Other Issue:</strong>
+                <p th:text="${ticket.otherIssue} ?: 'None'"></p>
+            </div>
+
+            <div class="detail-block">
+                <strong>Resolution Note:</strong>
+                <p th:text="${ticket.resolutionNote} ?: 'No resolution note yet.'"></p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Activity Timeline</h2>
+
+            <div th:if="${#lists.isEmpty(activities)}">
+                <p>No activity recorded yet.</p>
+            </div>
+
+            <div th:each="activity : ${activities}" class="timeline-item">
+                <div class="timeline-time" th:text="${activity.createdAt}"></div>
+                <div class="timeline-content">
+                    <strong th:text="${activity.activityType}"></strong>
+                    <p th:text="${activity.description}"></p>
+                    <small th:text="'By: ' + ${activity.actorUsername}"></small>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>

@@ -2,12 +2,13 @@ package helpdesk.controller;
 
 import helpdesk.dto.AdminTicketResponse;
 import helpdesk.dto.AdminTicketSummaryResponse;
+import helpdesk.dto.CreateTicketRequest;
 import helpdesk.dto.TicketFormRequest;
 import helpdesk.dto.TicketResponse;
-import helpdesk.service.TicketService;
-import helpdesk.service.UserService;
 import helpdesk.model.DeviceType;
 import helpdesk.model.IssueCategory;
+import helpdesk.service.TicketService;
+import helpdesk.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -16,8 +17,10 @@ import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-
+import helpdesk.dto.TicketActivityResponse;
+import helpdesk.service.TicketActivityService;
 import java.util.List;
 
 @Controller
@@ -26,6 +29,7 @@ public class PageController {
 
     private final TicketService ticketService;
     private final UserService userService;
+    private final TicketActivityService ticketActivityService;
 
     @GetMapping("/login")
     public String loginPage() {
@@ -96,6 +100,23 @@ public class PageController {
         return "user-ticket-form";
     }
 
+    @GetMapping("/user/tickets/{id}")
+    public String userTicketDetail(@PathVariable Long id,
+                                   Authentication authentication,
+                                   Model model) {
+        String username = authentication.getName();
+
+        TicketResponse ticket = ticketService.getMyTicketById(id, username);
+        List<TicketActivityResponse> activities =
+                ticketActivityService.getUserVisibleActivities(id, username);
+
+        model.addAttribute("username", username);
+        model.addAttribute("ticket", ticket);
+        model.addAttribute("activities", activities);
+
+        return "user-ticket-detail";
+    }
+
     @PostMapping("/user/tickets/new")
     public String submitTicket(@Valid @ModelAttribute("ticketForm") TicketFormRequest ticketForm,
                                BindingResult bindingResult,
@@ -109,7 +130,7 @@ public class PageController {
             return "user-ticket-form";
         }
 
-        helpdesk.dto.CreateTicketRequest request = new helpdesk.dto.CreateTicketRequest();
+        CreateTicketRequest request = new CreateTicketRequest();
         request.setDeviceType(ticketForm.getDeviceType());
         request.setIssueCategory(ticketForm.getIssueCategory());
         request.setAssetNumber(ticketForm.getAssetNumber());

@@ -266,6 +266,18 @@ public class TicketService {
         return mapToAdminResponse(savedTicket);
     }
 
+    @Transactional(readOnly = true)
+    public TicketResponse getMyTicketById(Long id, String username) {
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+
+        if (!ticket.getUser().getUsername().equals(username)) {
+            throw new RuntimeException("You can only view your own tickets");
+        }
+
+        return mapToUserResponse(ticket);
+    }
+
     @Transactional
     public AdminTicketResponse updatePriority(Long id,
                                               UpdateTicketPriorityRequest request,

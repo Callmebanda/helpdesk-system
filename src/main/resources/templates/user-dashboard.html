@@ -32,6 +32,7 @@
                     <th>Priority</th>
                     <th>Assigned To</th>
                     <th>Created</th>
+                    <th>Action</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -43,9 +44,12 @@
                     <td th:text="${ticket.priority}"></td>
                     <td th:text="${ticket.assignedTechnicianUsername} ?: 'Not assigned'"></td>
                     <td th:text="${ticket.createdAt}"></td>
+                    <td>
+                        <a th:href="@{'/user/tickets/' + ${ticket.id}}" class="table-link-btn">View</a>
+                    </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(tickets)}">
-                    <td colspan="7">No tickets found.</td>
+                    <td colspan="8">No tickets found.</td>
                 </tr>
                 </tbody>
             </table>
