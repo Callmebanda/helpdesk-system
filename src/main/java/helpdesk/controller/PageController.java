@@ -29,6 +29,8 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import helpdesk.dto.KnowledgeArticleResponse;
+import helpdesk.service.KnowledgeBaseService;
 
 import java.util.List;
 
@@ -39,6 +41,7 @@ public class PageController {
     private final TicketService ticketService;
     private final TicketActivityService ticketActivityService;
     private final UserService userService;
+    private final KnowledgeBaseService knowledgeBaseService;
 
     @GetMapping("/login")
     public String loginPage() {
@@ -254,5 +257,37 @@ public class PageController {
 
         ticketService.updateNotes(id, request, authentication.getName());
         return "redirect:/admin/tickets/" + id;
+    }
+
+    @GetMapping("/admin/knowledge")
+    public String adminKnowledgePage(Authentication authentication,
+                                     Model model) {
+        String username = authentication.getName();
+        List<KnowledgeArticleResponse> articles = knowledgeBaseService.getArticles(null, null);
+
+        model.addAttribute("username", username);
+        model.addAttribute("articles", articles);
+
+        return "admin-knowledge";
+    }
+
+    @GetMapping("/admin/knowledge/{id}")
+    public String adminKnowledgeDetail(@PathVariable Long id,
+                                       Authentication authentication,
+                                       Model model) {
+        String username = authentication.getName();
+        KnowledgeArticleResponse article = knowledgeBaseService.getArticleById(id);
+
+        model.addAttribute("username", username);
+        model.addAttribute("article", article);
+
+        return "admin-knowledge-detail";
+    }
+
+    @PostMapping("/admin/tickets/{id}/publish-knowledge")
+    public String publishTicketToKnowledge(@PathVariable Long id,
+                                           Authentication authentication) {
+        KnowledgeArticleResponse article = knowledgeBaseService.publishFromTicket(id, authentication.getName());
+        return "redirect:/admin/knowledge/" + article.getId();
     }
 }

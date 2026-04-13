@@ -118,6 +118,15 @@
         </div>
 
         <div class="card">
+            <h2>Knowledge Base</h2>
+            <p>Publish this resolved ticket and its resolution note into the knowledge base.</p>
+
+            <form th:action="@{'/admin/tickets/' + ${ticket.id} + '/publish-knowledge'}" method="post">
+                <button type="submit">Publish to Knowledge Base</button>
+            </form>
+        </div>
+
+        <div class="card">
             <h2>Activity Timeline</h2>
 
             <div th:if="${#lists.isEmpty(activities)}">

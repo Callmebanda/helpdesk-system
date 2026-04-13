@@ -11,10 +11,10 @@
         <h1>Admin Dashboard</h1>
         <div>
             <span th:text="'Signed in as: ' + ${username}"></span>
+            <a href="/admin/knowledge" class="logout-btn">Knowledge Base</a>
             <a href="/logout" class="logout-btn">Logout</a>
         </div>
     </header>
-
     <main class="content">
         <div class="summary-grid">
             <div class="card summary-card">

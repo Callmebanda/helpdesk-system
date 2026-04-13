@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Knowledge Base</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="layout">
+    <header class="topbar">
+        <h1>Knowledge Base</h1>
+        <div>
+            <span th:text="'Signed in as: ' + ${username}"></span>
+            <a href="/admin/dashboard" class="logout-btn">Back</a>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+    </header>
+
+    <main class="content">
+        <div class="card">
+            <h2>Published Articles</h2>
+
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Source Ticket</th>
+                    <th>Device</th>
+                    <th>Issue Category</th>
+                    <th>Title</th>
+                    <th>Published By</th>
+                    <th>Created</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="article : ${articles}">
+                    <td th:text="${article.id}"></td>
+                    <td th:text="${article.sourceTicketId}"></td>
+                    <td th:text="${article.deviceType}"></td>
+                    <td th:text="${article.issueCategory}"></td>
+                    <td th:text="${article.title}"></td>
+                    <td th:text="${article.publishedBy}"></td>
+                    <td th:text="${article.createdAt}"></td>
+                    <td>
+                        <a th:href="@{'/admin/knowledge/' + ${article.id}}" class="table-link-btn">View</a>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(articles)}">
+                    <td colspan="8">No knowledge articles found.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+</body>
+</html>
