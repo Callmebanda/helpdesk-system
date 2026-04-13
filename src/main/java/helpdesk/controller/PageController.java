@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
+import helpdesk.dto.KnowledgeArticleResponse;
 
 import java.util.List;
 
@@ -368,12 +369,20 @@ public class PageController {
 
     @GetMapping("/admin/knowledge")
     public String adminKnowledgePage(Authentication authentication,
-                                     Model model) {
+                                     Model model,
+                                     @RequestParam(required = false) DeviceType deviceType,
+                                     @RequestParam(required = false) IssueCategory issueCategory) {
         String username = authentication.getName();
-        List<KnowledgeArticleResponse> articles = knowledgeBaseService.getArticles(null, null);
+        List<KnowledgeArticleResponse> articles = knowledgeBaseService.getArticles(deviceType, issueCategory);
 
         model.addAttribute("username", username);
         model.addAttribute("articles", articles);
+
+        model.addAttribute("deviceTypes", DeviceType.values());
+        model.addAttribute("issueCategories", IssueCategory.values());
+
+        model.addAttribute("selectedDeviceType", deviceType);
+        model.addAttribute("selectedIssueCategory", issueCategory);
 
         return "admin-knowledge";
     }

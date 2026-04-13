@@ -11,12 +11,48 @@
         <h1>Knowledge Base</h1>
         <div>
             <span th:text="'Signed in as: ' + ${username}"></span>
-            <a href="/admin/dashboard" class="logout-btn">Back</a>
+            <a href="/admin/dashboard" class="logout-btn">Dashboard</a>
+            <a href="/admin/users" class="logout-btn">Users</a>
             <a href="/logout" class="logout-btn">Logout</a>
         </div>
     </header>
 
     <main class="content">
+        <div class="card">
+            <h2>Filter Articles</h2>
+
+            <form th:action="@{/admin/knowledge}" method="get" class="filter-grid">
+                <div>
+                    <label for="deviceType">Device Type</label>
+                    <select id="deviceType" name="deviceType">
+                        <option value="">All</option>
+                        <option th:each="device : ${deviceTypes}"
+                                th:value="${device}"
+                                th:text="${device}"
+                                th:selected="${selectedDeviceType == device}">
+                        </option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="issueCategory">Issue Category</label>
+                    <select id="issueCategory" name="issueCategory">
+                        <option value="">All</option>
+                        <option th:each="issue : ${issueCategories}"
+                                th:value="${issue}"
+                                th:text="${issue}"
+                                th:selected="${selectedIssueCategory == issue}">
+                        </option>
+                    </select>
+                </div>
+
+                <div class="filter-actions">
+                    <button type="submit">Apply Filters</button>
+                    <a href="/admin/knowledge" class="secondary-link-btn">Clear</a>
+                </div>
+            </form>
+        </div>
+
         <div class="card">
             <h2>Published Articles</h2>
 
