@@ -1,12 +1,6 @@
 package helpdesk.service;
 
-import helpdesk.dto.AdminTicketResponse;
-import helpdesk.dto.AdminTicketSummaryResponse;
-import helpdesk.dto.AssignTicketRequest;
-import helpdesk.dto.CreateTicketRequest;
-import helpdesk.dto.TicketResponse;
-import helpdesk.dto.UpdateTicketNotesRequest;
-import helpdesk.dto.UpdateTicketPriorityRequest;
+import helpdesk.dto.*;
 import helpdesk.model.ActivityType;
 import helpdesk.model.DeviceType;
 import helpdesk.model.IssueCategory;
@@ -294,6 +288,53 @@ public class TicketService {
         validateAssignedTechnician(ticket, technicianUsername);
 
         return mapToAdminResponse(ticket);
+    }
+
+    @Transactional(readOnly = true)
+    public TechTicketSummaryResponse getTechnicianTicketSummary(String technicianUsername) {
+        User technician = userRepository.findByUsername(technicianUsername)
+                .orElseThrow(() -> new RuntimeException("Technician not found"));
+
+        List<Ticket> tickets = ticketRepository.findByAssignedTechnician(technician);
+
+        long totalAssigned = tickets.size();
+        long pending = tickets.stream()
+                .filter(ticket -> ticket.getStatus() == TicketStatus.PENDING)
+                .count();
+        long inProgress = tickets.stream()
+                .filter(ticket -> ticket.getStatus() == TicketStatus.IN_PROGRESS)
+                .count();
+        long resolved = tickets.stream()
+                .filter(ticket -> ticket.getStatus() == TicketStatus.RESOLVED)
+                .count();
+        long overdue = tickets.stream()
+                .filter(this::isOverdue)
+                .count();
+
+        return TechTicketSummaryResponse.builder()
+                .totalAssigned(totalAssigned)
+                .pending(pending)
+                .inProgress(inProgress)
+                .resolved(resolved)
+                .overdue(overdue)
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public List<AdminTicketResponse> searchAssignedTickets(String technicianUsername,
+                                                           TicketStatus status,
+                                                           TicketPriority priority,
+                                                           Boolean overdue) {
+        User technician = userRepository.findByUsername(technicianUsername)
+                .orElseThrow(() -> new RuntimeException("Technician not found"));
+
+        return ticketRepository.findByAssignedTechnician(technician)
+                .stream()
+                .filter(ticket -> status == null || ticket.getStatus() == status)
+                .filter(ticket -> priority == null || ticket.getPriority() == priority)
+                .filter(ticket -> overdue == null || isOverdue(ticket) == overdue)
+                .map(this::mapToAdminResponse)
+                .toList();
     }
 
     @Transactional

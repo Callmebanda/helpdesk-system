@@ -1,15 +1,6 @@
 package helpdesk.controller;
 
-import helpdesk.dto.AdminTicketResponse;
-import helpdesk.dto.AdminTicketSummaryResponse;
-import helpdesk.dto.AssignTicketRequest;
-import helpdesk.dto.CreateTicketRequest;
-import helpdesk.dto.TicketActivityResponse;
-import helpdesk.dto.TicketFormRequest;
-import helpdesk.dto.TicketResponse;
-import helpdesk.dto.UpdateTicketNotesRequest;
-import helpdesk.dto.UpdateTicketPriorityRequest;
-import helpdesk.dto.UserResponse;
+import helpdesk.dto.*;
 import helpdesk.model.DeviceType;
 import helpdesk.model.IssueCategory;
 import helpdesk.model.Role;
@@ -27,9 +18,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import helpdesk.dto.KnowledgeArticleResponse;
-import helpdesk.dto.CreateUserRequest;
-import helpdesk.dto.UserImportResultResponse;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
@@ -191,12 +179,32 @@ public class PageController {
     }
 
     @GetMapping("/tech/dashboard")
-    public String techDashboard(Authentication authentication, Model model) {
+    public String techDashboard(Authentication authentication,
+                                Model model,
+                                @RequestParam(required = false) TicketStatus status,
+                                @RequestParam(required = false) TicketPriority priority,
+                                @RequestParam(required = false) Boolean overdue) {
         String username = authentication.getName();
-        List<AdminTicketResponse> tickets = ticketService.getAssignedTickets(username);
+
+        List<AdminTicketResponse> tickets = ticketService.searchAssignedTickets(
+                username,
+                status,
+                priority,
+                overdue
+        );
+
+        TechTicketSummaryResponse summary = ticketService.getTechnicianTicketSummary(username);
 
         model.addAttribute("username", username);
         model.addAttribute("tickets", tickets);
+        model.addAttribute("summary", summary);
+
+        model.addAttribute("statuses", TicketStatus.values());
+        model.addAttribute("priorities", TicketPriority.values());
+
+        model.addAttribute("selectedStatus", status);
+        model.addAttribute("selectedPriority", priority);
+        model.addAttribute("selectedOverdue", overdue);
 
         return "tech-dashboard";
     }
