@@ -204,3 +204,30 @@ select, textarea {
     gap: 20px;
     margin-bottom: 20px;
 }
+
+.filter-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    align-items: end;
+}
+
+.filter-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.secondary-link-btn {
+    background: #6b7280;
+    color: white;
+    padding: 10px 14px;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.secondary-link-btn:hover {
+    background: #4b5563;
+}

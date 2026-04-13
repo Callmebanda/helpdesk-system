@@ -79,14 +79,45 @@ public class PageController {
     }
 
     @GetMapping("/admin/dashboard")
-    public String adminDashboard(Authentication authentication, Model model) {
+    public String adminDashboard(Authentication authentication,
+                                 Model model,
+                                 @RequestParam(required = false) TicketStatus status,
+                                 @RequestParam(required = false) DeviceType deviceType,
+                                 @RequestParam(required = false) IssueCategory issueCategory,
+                                 @RequestParam(required = false) TicketPriority priority,
+                                 @RequestParam(required = false) String assignedTechnicianUsername,
+                                 @RequestParam(required = false) String department,
+                                 @RequestParam(required = false) Boolean overdue) {
+
         String username = authentication.getName();
         AdminTicketSummaryResponse summary = ticketService.getTicketSummary();
-        List<AdminTicketResponse> tickets = ticketService.getAllTickets();
+
+        List<AdminTicketResponse> tickets = ticketService.searchTickets(
+                status,
+                deviceType,
+                issueCategory,
+                priority,
+                assignedTechnicianUsername,
+                department,
+                overdue
+        );
 
         model.addAttribute("username", username);
         model.addAttribute("summary", summary);
         model.addAttribute("tickets", tickets);
+
+        model.addAttribute("statuses", TicketStatus.values());
+        model.addAttribute("deviceTypes", DeviceType.values());
+        model.addAttribute("issueCategories", IssueCategory.values());
+        model.addAttribute("priorities", TicketPriority.values());
+
+        model.addAttribute("selectedStatus", status);
+        model.addAttribute("selectedDeviceType", deviceType);
+        model.addAttribute("selectedIssueCategory", issueCategory);
+        model.addAttribute("selectedPriority", priority);
+        model.addAttribute("selectedAssignedTechnicianUsername", assignedTechnicianUsername);
+        model.addAttribute("selectedDepartment", department);
+        model.addAttribute("selectedOverdue", overdue);
 
         return "admin-dashboard";
     }
