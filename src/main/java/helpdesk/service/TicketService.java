@@ -278,6 +278,14 @@ public class TicketService {
         return mapToUserResponse(ticket);
     }
 
+    @Transactional(readOnly = true)
+    public AdminTicketResponse getTicketByIdForAdmin(Long id) {
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+
+        return mapToAdminResponse(ticket);
+    }
+
     @Transactional
     public AdminTicketResponse updatePriority(Long id,
                                               UpdateTicketPriorityRequest request,
