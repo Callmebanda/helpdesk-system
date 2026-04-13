@@ -231,3 +231,31 @@ select, textarea {
 .secondary-link-btn:hover {
     background: #4b5563;
 }
+
+.primary-small-btn {
+    background: #0b3d91;
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.primary-small-btn:hover {
+    background: #092f70;
+}
+
+.danger-btn {
+    background: #b91c1c;
+    color: white;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.danger-btn:hover {
+    background: #991b1b;
+}

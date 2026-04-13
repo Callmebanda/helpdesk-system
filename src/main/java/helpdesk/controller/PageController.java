@@ -15,9 +15,7 @@ import helpdesk.model.IssueCategory;
 import helpdesk.model.Role;
 import helpdesk.model.TicketPriority;
 import helpdesk.model.TicketStatus;
-import helpdesk.service.TicketActivityService;
-import helpdesk.service.TicketService;
-import helpdesk.service.UserService;
+import helpdesk.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -30,7 +28,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import helpdesk.dto.KnowledgeArticleResponse;
-import helpdesk.service.KnowledgeBaseService;
+import helpdesk.dto.CreateUserRequest;
+import helpdesk.dto.UserImportResultResponse;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -42,6 +42,7 @@ public class PageController {
     private final TicketActivityService ticketActivityService;
     private final UserService userService;
     private final KnowledgeBaseService knowledgeBaseService;
+    private final UserImportService userImportService;
 
     @GetMapping("/login")
     public String loginPage() {
@@ -120,6 +121,73 @@ public class PageController {
         model.addAttribute("selectedOverdue", overdue);
 
         return "admin-dashboard";
+    }
+
+    @GetMapping("/admin/users")
+    public String adminUsersPage(Authentication authentication,
+                                 Model model,
+                                 @RequestParam(required = false) String successMessage,
+                                 @RequestParam(required = false) String errorMessage) {
+        String username = authentication.getName();
+        List<UserResponse> users = userService.getAllUsers();
+
+        model.addAttribute("username", username);
+        model.addAttribute("users", users);
+        model.addAttribute("userForm", new CreateUserRequest());
+        model.addAttribute("roles", Role.values());
+        model.addAttribute("successMessage", successMessage);
+        model.addAttribute("errorMessage", errorMessage);
+
+        return "admin-users";
+    }
+
+    @PostMapping("/admin/users/create")
+    public String createUserFromPage(@Valid @ModelAttribute("userForm") CreateUserRequest userForm,
+                                     BindingResult bindingResult,
+                                     Authentication authentication,
+                                     Model model) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("username", authentication.getName());
+            model.addAttribute("users", userService.getAllUsers());
+            model.addAttribute("roles", Role.values());
+            model.addAttribute("errorMessage", "Please correct the form errors.");
+            return "admin-users";
+        }
+
+        try {
+            userService.createUser(userForm);
+            return "redirect:/admin/users?successMessage=User created successfully";
+        } catch (Exception e) {
+            model.addAttribute("username", authentication.getName());
+            model.addAttribute("users", userService.getAllUsers());
+            model.addAttribute("roles", Role.values());
+            model.addAttribute("errorMessage", e.getMessage());
+            return "admin-users";
+        }
+    }
+
+    @PostMapping("/admin/users/import")
+    public String importUsersFromPage(@RequestParam("file") MultipartFile file) {
+        try {
+            UserImportResultResponse result = userImportService.importUsersFromCsv(file);
+            String message = "Import complete. Imported: " + result.getImportedCount()
+                    + ", Skipped: " + result.getSkippedCount();
+            return "redirect:/admin/users?successMessage=" + message;
+        } catch (Exception e) {
+            return "redirect:/admin/users?errorMessage=" + e.getMessage();
+        }
+    }
+
+    @PostMapping("/admin/users/{id}/enable")
+    public String enableUserFromPage(@PathVariable Long id) {
+        userService.setUserEnabled(id, true);
+        return "redirect:/admin/users?successMessage=User enabled successfully";
+    }
+
+    @PostMapping("/admin/users/{id}/disable")
+    public String disableUserFromPage(@PathVariable Long id) {
+        userService.setUserEnabled(id, false);
+        return "redirect:/admin/users?successMessage=User disabled successfully";
     }
 
     @GetMapping("/tech/dashboard")

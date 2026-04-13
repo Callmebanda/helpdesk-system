@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Users</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="layout">
+    <header class="topbar">
+        <h1>User Management</h1>
+        <div>
+            <span th:text="'Signed in as: ' + ${username}"></span>
+            <a href="/admin/dashboard" class="logout-btn">Back</a>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+    </header>
+
+    <main class="content">
+
+        <div th:if="${successMessage}" class="alert success" th:text="${successMessage}"></div>
+        <div th:if="${errorMessage}" class="alert error" th:text="${errorMessage}"></div>
+
+        <div class="action-grid">
+            <div class="card">
+                <h2>Create User</h2>
+
+                <form th:action="@{/admin/users/create}" th:object="${userForm}" method="post" class="form">
+                    <label for="username">Username</label>
+                    <input id="username" th:field="*{username}" type="text" required>
+
+                    <label for="password">Temporary Password</label>
+                    <input id="password" th:field="*{password}" type="text" required>
+
+                    <label for="role">Role</label>
+                    <select id="role" th:field="*{role}" required>
+                        <option value="">-- Select Role --</option>
+                        <option th:each="roleValue : ${roles}"
+                                th:value="${roleValue}"
+                                th:text="${roleValue}">
+                        </option>
+                    </select>
+
+                    <label for="firstName">First Name</label>
+                    <input id="firstName" th:field="*{firstName}" type="text" required>
+
+                    <label for="lastName">Last Name</label>
+                    <input id="lastName" th:field="*{lastName}" type="text" required>
+
+                    <label for="department">Department</label>
+                    <input id="department" th:field="*{department}" type="text">
+
+                    <label for="officeNumber">Office Number</label>
+                    <input id="officeNumber" th:field="*{officeNumber}" type="text">
+
+                    <label for="floorNumber">Floor Number</label>
+                    <input id="floorNumber" th:field="*{floorNumber}" type="text">
+
+                    <label for="telephoneExtension">Telephone Extension</label>
+                    <input id="telephoneExtension" th:field="*{telephoneExtension}" type="text">
+
+                    <label for="building">Building</label>
+                    <input id="building" th:field="*{building}" type="text">
+
+                    <button type="submit">Create User</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Import Users from CSV</h2>
+                <p>Upload a CSV file with the pilot user list.</p>
+
+                <form th:action="@{/admin/users/import}" method="post" enctype="multipart/form-data" class="form">
+                    <label for="file">CSV File</label>
+                    <input id="file" name="file" type="file" accept=".csv" required>
+                    <button type="submit">Import CSV</button>
+                </form>
+
+                <div class="detail-block">
+                    <strong>Expected CSV Headers:</strong>
+                    <p>
+                        username, password, role, firstName, lastName, department,
+                        officeNumber, floorNumber, telephoneExtension, building
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>All Users</h2>
+
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Building</th>
+                    <th>Enabled</th>
+                    <th>Must Change Password</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="user : ${users}">
+                    <td th:text="${user.id}"></td>
+                    <td th:text="${user.username}"></td>
+                    <td th:text="${user.role}"></td>
+                    <td th:text="${user.firstName + ' ' + user.lastName}"></td>
+                    <td th:text="${user.department} ?: '-'"></td>
+                    <td th:text="${user.building} ?: '-'"></td>
+                    <td th:text="${user.enabled} ? 'Yes' : 'No'"></td>
+                    <td th:text="${user.mustChangePassword} ? 'Yes' : 'No'"></td>
+                    <td>
+                        <form th:if="${user.enabled}" th:action="@{'/admin/users/' + ${user.id} + '/disable'}" method="post">
+                            <button type="submit" class="danger-btn">Disable</button>
+                        </form>
+
+                        <form th:if="${!user.enabled}" th:action="@{'/admin/users/' + ${user.id} + '/enable'}" method="post">
+                            <button type="submit" class="primary-small-btn">Enable</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(users)}">
+                    <td colspan="9">No users found.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+</body>
+</html>

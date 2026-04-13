@@ -11,6 +11,7 @@
         <h1>Admin Dashboard</h1>
         <div>
             <span th:text="'Signed in as: ' + ${username}"></span>
+            <a href="/admin/users" class="logout-btn">Users</a>
             <a href="/admin/knowledge" class="logout-btn">Knowledge Base</a>
             <a href="/logout" class="logout-btn">Logout</a>
         </div>
