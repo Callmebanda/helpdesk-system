@@ -18,6 +18,7 @@
         </div>
     </header>
 
+    <div th:replace="~{fragments/alerts :: alerts}"></div>
     <main class="content">
         <div class="card">
             <h2 th:text="'Ticket #' + ${ticket.id}"></h2>

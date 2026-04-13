@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 import helpdesk.dto.KnowledgeArticleResponse;
 import helpdesk.dto.UserTicketSummaryResponse;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 
@@ -139,9 +140,7 @@ public class PageController {
 
     @GetMapping("/admin/users")
     public String adminUsersPage(Authentication authentication,
-                                 Model model,
-                                 @RequestParam(required = false) String successMessage,
-                                 @RequestParam(required = false) String errorMessage) {
+                                 Model model) {
         String username = authentication.getName();
         List<UserResponse> users = userService.getAllUsers();
 
@@ -149,17 +148,15 @@ public class PageController {
         model.addAttribute("users", users);
         model.addAttribute("userForm", new CreateUserRequest());
         model.addAttribute("roles", Role.values());
-        model.addAttribute("successMessage", successMessage);
-        model.addAttribute("errorMessage", errorMessage);
 
         return "admin-users";
     }
-
     @PostMapping("/admin/users/create")
     public String createUserFromPage(@Valid @ModelAttribute("userForm") CreateUserRequest userForm,
                                      BindingResult bindingResult,
                                      Authentication authentication,
-                                     Model model) {
+                                     Model model,
+                                     RedirectAttributes redirectAttributes) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("username", authentication.getName());
             model.addAttribute("users", userService.getAllUsers());
@@ -170,7 +167,8 @@ public class PageController {
 
         try {
             userService.createUser(userForm);
-            return "redirect:/admin/users?successMessage=User created successfully";
+            redirectAttributes.addFlashAttribute("successMessage", "User created successfully.");
+            return "redirect:/admin/users";
         } catch (Exception e) {
             model.addAttribute("username", authentication.getName());
             model.addAttribute("users", userService.getAllUsers());
@@ -179,29 +177,35 @@ public class PageController {
             return "admin-users";
         }
     }
-
     @PostMapping("/admin/users/import")
-    public String importUsersFromPage(@RequestParam("file") MultipartFile file) {
+    public String importUsersFromPage(@RequestParam("file") MultipartFile file,
+                                      RedirectAttributes redirectAttributes) {
         try {
             UserImportResultResponse result = userImportService.importUsersFromCsv(file);
             String message = "Import complete. Imported: " + result.getImportedCount()
                     + ", Skipped: " + result.getSkippedCount();
-            return "redirect:/admin/users?successMessage=" + message;
+            redirectAttributes.addFlashAttribute("successMessage", message);
         } catch (Exception e) {
-            return "redirect:/admin/users?errorMessage=" + e.getMessage();
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
+
+        return "redirect:/admin/users";
     }
 
     @PostMapping("/admin/users/{id}/enable")
-    public String enableUserFromPage(@PathVariable Long id) {
+    public String enableUserFromPage(@PathVariable Long id,
+                                     RedirectAttributes redirectAttributes) {
         userService.setUserEnabled(id, true);
-        return "redirect:/admin/users?successMessage=User enabled successfully";
+        redirectAttributes.addFlashAttribute("successMessage", "User enabled successfully.");
+        return "redirect:/admin/users";
     }
 
     @PostMapping("/admin/users/{id}/disable")
-    public String disableUserFromPage(@PathVariable Long id) {
+    public String disableUserFromPage(@PathVariable Long id,
+                                      RedirectAttributes redirectAttributes) {
         userService.setUserEnabled(id, false);
-        return "redirect:/admin/users?successMessage=User disabled successfully";
+        redirectAttributes.addFlashAttribute("successMessage", "User disabled successfully.");
+        return "redirect:/admin/users";
     }
 
     @GetMapping("/tech/dashboard")
@@ -249,7 +253,8 @@ public class PageController {
     public String submitTicket(@Valid @ModelAttribute("ticketForm") TicketFormRequest ticketForm,
                                BindingResult bindingResult,
                                Authentication authentication,
-                               Model model) {
+                               Model model,
+                               RedirectAttributes redirectAttributes) {
 
         if (bindingResult.hasErrors()) {
             model.addAttribute("username", authentication.getName());
@@ -267,10 +272,10 @@ public class PageController {
         request.setOtherIssue(ticketForm.getOtherIssue());
 
         ticketService.createTicket(authentication.getName(), request);
+        redirectAttributes.addFlashAttribute("successMessage", "Ticket submitted successfully.");
 
         return "redirect:/user/dashboard";
     }
-
     @GetMapping("/user/tickets/{id}")
     public String userTicketDetail(@PathVariable Long id,
                                    Authentication authentication,
@@ -331,8 +336,15 @@ public class PageController {
     @PostMapping("/tech/tickets/{id}/status")
     public String updateTechTicketStatusFromPage(@PathVariable Long id,
                                                  @RequestParam TicketStatus status,
-                                                 Authentication authentication) {
-        ticketService.updateAssignedTicketStatus(id, status, authentication.getName());
+                                                 Authentication authentication,
+                                                 RedirectAttributes redirectAttributes) {
+        try {
+            ticketService.updateAssignedTicketStatus(id, status, authentication.getName());
+            redirectAttributes.addFlashAttribute("successMessage", "Ticket status updated successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
         return "redirect:/tech/tickets/" + id;
     }
 
@@ -340,42 +352,70 @@ public class PageController {
     public String updateTechTicketNotesFromPage(@PathVariable Long id,
                                                 @RequestParam(required = false) String resolutionNote,
                                                 @RequestParam(required = false) String internalNote,
-                                                Authentication authentication) {
-        UpdateTicketNotesRequest request = new UpdateTicketNotesRequest();
-        request.setResolutionNote(resolutionNote);
-        request.setInternalNote(internalNote);
+                                                Authentication authentication,
+                                                RedirectAttributes redirectAttributes) {
+        try {
+            UpdateTicketNotesRequest request = new UpdateTicketNotesRequest();
+            request.setResolutionNote(resolutionNote);
+            request.setInternalNote(internalNote);
 
-        ticketService.updateAssignedTicketNotes(id, request, authentication.getName());
+            ticketService.updateAssignedTicketNotes(id, request, authentication.getName());
+            redirectAttributes.addFlashAttribute("successMessage", "Ticket notes saved successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
         return "redirect:/tech/tickets/" + id;
     }
 
     @PostMapping("/admin/tickets/{id}/assign")
     public String assignTicketFromPage(@PathVariable Long id,
                                        @RequestParam String technicianUsername,
-                                       Authentication authentication) {
-        AssignTicketRequest request = new AssignTicketRequest();
-        request.setTechnicianUsername(technicianUsername);
+                                       Authentication authentication,
+                                       RedirectAttributes redirectAttributes) {
+        try {
+            AssignTicketRequest request = new AssignTicketRequest();
+            request.setTechnicianUsername(technicianUsername);
 
-        ticketService.assignTicket(id, request, authentication.getName());
+            ticketService.assignTicket(id, request, authentication.getName());
+            redirectAttributes.addFlashAttribute("successMessage", "Ticket assigned successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
         return "redirect:/admin/tickets/" + id;
     }
 
     @PostMapping("/admin/tickets/{id}/status")
     public String updateTicketStatusFromPage(@PathVariable Long id,
                                              @RequestParam TicketStatus status,
-                                             Authentication authentication) {
-        ticketService.updateStatus(id, status, authentication.getName());
+                                             Authentication authentication,
+                                             RedirectAttributes redirectAttributes) {
+        try {
+            ticketService.updateStatus(id, status, authentication.getName());
+            redirectAttributes.addFlashAttribute("successMessage", "Ticket status updated successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
         return "redirect:/admin/tickets/" + id;
     }
 
     @PostMapping("/admin/tickets/{id}/priority")
     public String updateTicketPriorityFromPage(@PathVariable Long id,
                                                @RequestParam TicketPriority priority,
-                                               Authentication authentication) {
-        UpdateTicketPriorityRequest request = new UpdateTicketPriorityRequest();
-        request.setPriority(priority);
+                                               Authentication authentication,
+                                               RedirectAttributes redirectAttributes) {
+        try {
+            UpdateTicketPriorityRequest request = new UpdateTicketPriorityRequest();
+            request.setPriority(priority);
 
-        ticketService.updatePriority(id, request, authentication.getName());
+            ticketService.updatePriority(id, request, authentication.getName());
+            redirectAttributes.addFlashAttribute("successMessage", "Ticket priority updated successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
         return "redirect:/admin/tickets/" + id;
     }
 
@@ -383,12 +423,19 @@ public class PageController {
     public String updateTicketNotesFromPage(@PathVariable Long id,
                                             @RequestParam(required = false) String resolutionNote,
                                             @RequestParam(required = false) String internalNote,
-                                            Authentication authentication) {
-        UpdateTicketNotesRequest request = new UpdateTicketNotesRequest();
-        request.setResolutionNote(resolutionNote);
-        request.setInternalNote(internalNote);
+                                            Authentication authentication,
+                                            RedirectAttributes redirectAttributes) {
+        try {
+            UpdateTicketNotesRequest request = new UpdateTicketNotesRequest();
+            request.setResolutionNote(resolutionNote);
+            request.setInternalNote(internalNote);
 
-        ticketService.updateNotes(id, request, authentication.getName());
+            ticketService.updateNotes(id, request, authentication.getName());
+            redirectAttributes.addFlashAttribute("successMessage", "Ticket notes saved successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
         return "redirect:/admin/tickets/" + id;
     }
 
@@ -427,8 +474,15 @@ public class PageController {
 
     @PostMapping("/admin/tickets/{id}/publish-knowledge")
     public String publishTicketToKnowledge(@PathVariable Long id,
-                                           Authentication authentication) {
-        KnowledgeArticleResponse article = knowledgeBaseService.publishFromTicket(id, authentication.getName());
-        return "redirect:/admin/knowledge/" + article.getId();
+                                           Authentication authentication,
+                                           RedirectAttributes redirectAttributes) {
+        try {
+            KnowledgeArticleResponse article = knowledgeBaseService.publishFromTicket(id, authentication.getName());
+            redirectAttributes.addFlashAttribute("successMessage", "Ticket published to knowledge base successfully.");
+            return "redirect:/admin/knowledge/" + article.getId();
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/admin/tickets/" + id;
+        }
     }
 }

@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Error</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="page-center">
+    <div class="card login-card">
+        <h1>Something went wrong</h1>
+        <p>Sorry, the page could not be completed.</p>
+
+        <div class="detail-block">
+            <strong>Status:</strong>
+            <p th:text="${status} ?: 'Unknown'"></p>
+        </div>
+
+        <div class="detail-block">
+            <strong>Error:</strong>
+            <p th:text="${error} ?: 'Unexpected error'"></p>
+        </div>
+
+        <div class="detail-block">
+            <strong>Message:</strong>
+            <p th:text="${message} ?: 'Please go back and try again.'"></p>
+        </div>
+
+        <a href="/dashboard" class="primary-link-btn">Return to Dashboard</a>
+    </div>
+</div>
+</body>
+</html>

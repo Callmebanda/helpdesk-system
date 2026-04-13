@@ -17,6 +17,7 @@
         </div>
     </header>
 
+    <div th:replace="~{fragments/alerts :: alerts}"></div>
     <main class="content">
 
         <div th:if="${successMessage}" class="alert success" th:text="${successMessage}"></div>
