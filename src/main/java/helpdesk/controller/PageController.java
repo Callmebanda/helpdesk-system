@@ -34,6 +34,7 @@ import helpdesk.dto.ReviewDeviceReportRequest;
 import helpdesk.model.DeviceReportStatus;
 import helpdesk.model.DeviceReportType;
 import helpdesk.service.DeviceReportService;
+import org.springframework.data.domain.Page;
 
 import java.util.List;
 
@@ -117,24 +118,35 @@ public class PageController {
                                  @RequestParam(required = false) TicketPriority priority,
                                  @RequestParam(required = false) String assignedTechnicianUsername,
                                  @RequestParam(required = false) String department,
-                                 @RequestParam(required = false) Boolean overdue) {
+                                 @RequestParam(required = false) Boolean overdue,
+                                 @RequestParam(defaultValue = "0") int page,
+                                 @RequestParam(defaultValue = "10") int size) {
 
         String username = authentication.getName();
         AdminTicketSummaryResponse summary = ticketService.getTicketSummary();
 
-        List<AdminTicketResponse> tickets = ticketService.searchTickets(
+        Page<AdminTicketResponse> ticketPage = ticketService.searchTicketsPage(
                 status,
                 deviceType,
                 issueCategory,
                 priority,
                 assignedTechnicianUsername,
                 department,
-                overdue
+                overdue,
+                page,
+                size
         );
 
         model.addAttribute("username", username);
         model.addAttribute("summary", summary);
-        model.addAttribute("tickets", tickets);
+        model.addAttribute("tickets", ticketPage.getContent());
+
+        model.addAttribute("currentPage", ticketPage.getNumber());
+        model.addAttribute("totalPages", ticketPage.getTotalPages());
+        model.addAttribute("totalItems", ticketPage.getTotalElements());
+        model.addAttribute("pageSize", size);
+        model.addAttribute("hasPrevious", ticketPage.hasPrevious());
+        model.addAttribute("hasNext", ticketPage.hasNext());
 
         model.addAttribute("statuses", TicketStatus.values());
         model.addAttribute("deviceTypes", DeviceType.values());
@@ -151,7 +163,6 @@ public class PageController {
 
         return "admin-dashboard";
     }
-
     @GetMapping("/admin/users")
     public String adminUsersPage(Authentication authentication,
                                  Model model) {

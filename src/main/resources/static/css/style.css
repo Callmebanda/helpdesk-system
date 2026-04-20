@@ -269,3 +269,16 @@ select, textarea {
 .inline-form select {
     min-width: 180px;
 }
+
+.pagination-bar {
+    margin-top: 18px;
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+.pagination-info {
+    margin-top: 10px;
+    color: #555;
+    font-size: 14px;
+}

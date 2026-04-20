@@ -130,6 +130,24 @@
                     </select>
                 </div>
 
+                <div>
+                    <label for="size">Page Size</label>
+                    <select id="size" name="size">
+                        <option value="10" th:selected="${pageSize == 10}">10</option>
+                        <option value="20" th:selected="${pageSize == 20}">20</option>
+                        <option value="50" th:selected="${pageSize == 50}">50</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="size">Page Size</label>
+                    <select id="size" name="size">
+                        <option value="10" th:selected="${pageSize == 10}">10</option>
+                        <option value="20" th:selected="${pageSize == 20}">20</option>
+                        <option value="50" th:selected="${pageSize == 50}">50</option>
+                    </select>
+                </div>
+
                 <div class="filter-actions">
                     <button type="submit">Apply Filters</button>
                     <a href="/admin/dashboard" class="secondary-link-btn">Clear</a>
@@ -178,6 +196,41 @@
                 </tr>
                 </tbody>
             </table>
+            <div class="pagination-bar" th:if="${totalPages > 1}">
+                <a th:if="${hasPrevious}"
+                   th:href="@{/admin/dashboard(
+            page=${currentPage - 1},
+            size=${pageSize},
+            status=${selectedStatus},
+            deviceType=${selectedDeviceType},
+            issueCategory=${selectedIssueCategory},
+            priority=${selectedPriority},
+            assignedTechnicianUsername=${selectedAssignedTechnicianUsername},
+            department=${selectedDepartment},
+            overdue=${selectedOverdue}
+       )}"
+                   class="secondary-link-btn">Previous</a>
+
+                <span th:text="'Page ' + (${currentPage} + 1) + ' of ' + ${totalPages}"></span>
+
+                <a th:if="${hasNext}"
+                   th:href="@{/admin/dashboard(
+            page=${currentPage + 1},
+            size=${pageSize},
+            status=${selectedStatus},
+            deviceType=${selectedDeviceType},
+            issueCategory=${selectedIssueCategory},
+            priority=${selectedPriority},
+            assignedTechnicianUsername=${selectedAssignedTechnicianUsername},
+            department=${selectedDepartment},
+            overdue=${selectedOverdue}
+       )}"
+                   class="secondary-link-btn">Next</a>
+            </div>
+
+            <div class="pagination-info">
+                <span th:text="'Total matching tickets: ' + ${totalItems}"></span>
+            </div>
         </div>
     </main>
 </div>

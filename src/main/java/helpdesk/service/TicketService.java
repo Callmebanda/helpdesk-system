@@ -16,6 +16,15 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import helpdesk.dto.UserTicketSummaryResponse;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
+
+import java.util.ArrayList;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -511,6 +520,83 @@ public class TicketService {
         );
 
         return mapToAdminResponse(savedTicket);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<AdminTicketResponse> searchTicketsPage(TicketStatus status,
+                                                       DeviceType deviceType,
+                                                       IssueCategory issueCategory,
+                                                       TicketPriority priority,
+                                                       String assignedTechnicianUsername,
+                                                       String department,
+                                                       Boolean overdue,
+                                                       int page,
+                                                       int size) {
+
+        int safePage = Math.max(page, 0);
+        int safeSize = size < 1 ? 10 : Math.min(size, 50);
+
+        Pageable pageable = PageRequest.of(
+                safePage,
+                safeSize,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        Specification<Ticket> specification = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (status != null) {
+                predicates.add(criteriaBuilder.equal(root.get("status"), status));
+            }
+
+            if (deviceType != null) {
+                predicates.add(criteriaBuilder.equal(root.get("deviceType"), deviceType));
+            }
+
+            if (issueCategory != null) {
+                predicates.add(criteriaBuilder.equal(root.get("issueCategory"), issueCategory));
+            }
+
+            if (priority != null) {
+                predicates.add(criteriaBuilder.equal(root.get("priority"), priority));
+            }
+
+            if (assignedTechnicianUsername != null && !assignedTechnicianUsername.isBlank()) {
+                Join<Ticket, User> technicianJoin = root.join("assignedTechnician", JoinType.LEFT);
+
+                predicates.add(criteriaBuilder.equal(
+                        criteriaBuilder.lower(technicianJoin.get("username")),
+                        assignedTechnicianUsername.trim().toLowerCase()
+                ));
+            }
+
+            if (department != null && !department.isBlank()) {
+                Join<Ticket, User> userJoin = root.join("user", JoinType.LEFT);
+
+                predicates.add(criteriaBuilder.equal(
+                        criteriaBuilder.lower(userJoin.get("department")),
+                        department.trim().toLowerCase()
+                ));
+            }
+
+            if (overdue != null) {
+                Predicate overduePredicate = criteriaBuilder.and(
+                        criteriaBuilder.notEqual(root.get("status"), TicketStatus.RESOLVED),
+                        criteriaBuilder.lessThan(root.get("dueAt"), LocalDateTime.now())
+                );
+
+                if (overdue) {
+                    predicates.add(overduePredicate);
+                } else {
+                    predicates.add(criteriaBuilder.not(overduePredicate));
+                }
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return ticketRepository.findAll(specification, pageable)
+                .map(this::mapToAdminResponse);
     }
 
     private void validateAssignedTechnician(Ticket ticket, String technicianUsername) {
