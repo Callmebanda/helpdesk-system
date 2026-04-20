@@ -68,6 +68,9 @@ public class Ticket {
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
+    @Column
+    private String createdByUsername;
+
     private LocalDateTime updatedAt;
 
     private LocalDateTime resolvedAt;

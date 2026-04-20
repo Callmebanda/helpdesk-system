@@ -39,6 +39,7 @@ public class TicketService {
 
         Ticket ticket = Ticket.builder()
                 .user(user)
+                .createdByUsername(username)
                 .deviceType(request.getDeviceType())
                 .issueCategory(request.getIssueCategory())
                 .assetNumber(request.getAssetNumber())
@@ -49,7 +50,6 @@ public class TicketService {
                 .dueAt(calculateDueAt(defaultPriority, now))
                 .status(TicketStatus.PENDING)
                 .build();
-
         Ticket savedTicket = ticketRepository.save(ticket);
 
         ticketActivityService.logActivity(
@@ -476,6 +476,43 @@ public class TicketService {
                 .toList();
     }
 
+    @Transactional
+    public AdminTicketResponse createTicketForUser(String actorUsername,
+                                                   String targetUsername,
+                                                   CreateTicketRequest request) {
+        User targetUser = userRepository.findByUsername(targetUsername)
+                .orElseThrow(() -> new RuntimeException("Target user not found"));
+
+        TicketPriority defaultPriority = TicketPriority.MEDIUM;
+        LocalDateTime now = LocalDateTime.now();
+
+        Ticket ticket = Ticket.builder()
+                .user(targetUser)
+                .createdByUsername(actorUsername)
+                .deviceType(request.getDeviceType())
+                .issueCategory(request.getIssueCategory())
+                .assetNumber(request.getAssetNumber())
+                .problemTitle(request.getProblemTitle())
+                .description(request.getDescription())
+                .otherIssue(request.getOtherIssue())
+                .priority(defaultPriority)
+                .dueAt(calculateDueAt(defaultPriority, now))
+                .status(TicketStatus.PENDING)
+                .build();
+
+        Ticket savedTicket = ticketRepository.save(ticket);
+
+        ticketActivityService.logActivity(
+                savedTicket,
+                ActivityType.TICKET_CREATED,
+                actorUsername,
+                "Ticket created by " + actorUsername + " for user " + targetUsername,
+                true
+        );
+
+        return mapToAdminResponse(savedTicket);
+    }
+
     private void validateAssignedTechnician(Ticket ticket, String technicianUsername) {
         if (ticket.getAssignedTechnician() == null) {
             throw new RuntimeException("Ticket is not assigned to any technician");
@@ -534,6 +571,7 @@ public class TicketService {
                 .priority(ticket.getPriority())
                 .dueAt(ticket.getDueAt())
                 .overdue(isOverdue(ticket))
+                .createdByUsername(ticket.getCreatedByUsername())
                 .build();
     }
 
@@ -570,6 +608,7 @@ public class TicketService {
                 .priority(ticket.getPriority())
                 .dueAt(ticket.getDueAt())
                 .overdue(isOverdue(ticket))
+                .createdByUsername(ticket.getCreatedByUsername())
                 .build();
     }
 }

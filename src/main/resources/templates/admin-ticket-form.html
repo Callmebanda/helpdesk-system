@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Create Ticket for User</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="layout">
+    <header class="topbar">
+        <h1>Create Ticket for User</h1>
+        <div>
+            <span th:text="'Signed in as: ' + ${username}"></span>
+            <a href="/admin/dashboard" class="logout-btn">Back</a>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+    </header>
+
+    <main class="content">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <div class="card">
+            <h2>Log a Ticket on Behalf of a User</h2>
+
+            <form th:action="@{/admin/tickets/new}" th:object="${ticketForm}" method="post" class="form">
+
+                <label for="targetUsername">User</label>
+                <select id="targetUsername" th:field="*{targetUsername}" required>
+                    <option value="">-- Select User --</option>
+                    <option th:each="u : ${users}"
+                            th:value="${u.username}"
+                            th:text="${u.firstName + ' ' + u.lastName + ' (' + u.username + ')'}">
+                    </option>
+                </select>
+
+                <label for="deviceType">Device Type</label>
+                <select id="deviceType" th:field="*{deviceType}" required>
+                    <option value="">-- Select Device --</option>
+                    <option th:each="device : ${deviceTypes}"
+                            th:value="${device}"
+                            th:text="${device}">
+                    </option>
+                </select>
+
+                <label for="issueCategory">Issue Category</label>
+                <select id="issueCategory" th:field="*{issueCategory}" required>
+                    <option value="">-- Select Issue Category --</option>
+                    <option th:each="issue : ${issueCategories}"
+                            th:value="${issue}"
+                            th:text="${issue}">
+                    </option>
+                </select>
+
+                <label for="assetNumber">Asset Number</label>
+                <input id="assetNumber" th:field="*{assetNumber}" type="text" required>
+
+                <label for="problemTitle">Problem Title</label>
+                <input id="problemTitle" th:field="*{problemTitle}" type="text" required>
+
+                <label for="description">Description</label>
+                <textarea id="description" th:field="*{description}" rows="5"></textarea>
+
+                <label for="otherIssue">Other Issue</label>
+                <textarea id="otherIssue" th:field="*{otherIssue}" rows="3"></textarea>
+
+                <button type="submit">Create Ticket</button>
+            </form>
+        </div>
+    </main>
+</div>
+</body>
+</html>

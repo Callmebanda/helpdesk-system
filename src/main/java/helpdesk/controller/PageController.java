@@ -22,6 +22,7 @@ import org.springframework.web.multipart.MultipartFile;
 import helpdesk.dto.KnowledgeArticleResponse;
 import helpdesk.dto.UserTicketSummaryResponse;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import helpdesk.dto.AdminTicketFormRequest;
 
 import java.util.List;
 
@@ -483,6 +484,73 @@ public class PageController {
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             return "redirect:/admin/tickets/" + id;
+        }
+    }
+
+    @GetMapping("/admin/tickets/new")
+    public String adminNewTicketPage(Authentication authentication, Model model) {
+        String username = authentication.getName();
+
+        List<UserResponse> users = userService.getAllUsers().stream()
+                .filter(user -> user.getRole() == Role.USER && user.isEnabled())
+                .toList();
+
+        model.addAttribute("username", username);
+        model.addAttribute("ticketForm", new AdminTicketFormRequest());
+        model.addAttribute("users", users);
+        model.addAttribute("deviceTypes", DeviceType.values());
+        model.addAttribute("issueCategories", IssueCategory.values());
+
+        return "admin-ticket-form";
+    }
+
+    @PostMapping("/admin/tickets/new")
+    public String adminSubmitTicket(@Valid @ModelAttribute("ticketForm") AdminTicketFormRequest ticketForm,
+                                    BindingResult bindingResult,
+                                    Authentication authentication,
+                                    Model model,
+                                    RedirectAttributes redirectAttributes) {
+
+        if (bindingResult.hasErrors()) {
+            List<UserResponse> users = userService.getAllUsers().stream()
+                    .filter(user -> user.getRole() == Role.USER && user.isEnabled())
+                    .toList();
+
+            model.addAttribute("username", authentication.getName());
+            model.addAttribute("users", users);
+            model.addAttribute("deviceTypes", DeviceType.values());
+            model.addAttribute("issueCategories", IssueCategory.values());
+            return "admin-ticket-form";
+        }
+
+        try {
+            CreateTicketRequest request = new CreateTicketRequest();
+            request.setDeviceType(ticketForm.getDeviceType());
+            request.setIssueCategory(ticketForm.getIssueCategory());
+            request.setAssetNumber(ticketForm.getAssetNumber());
+            request.setProblemTitle(ticketForm.getProblemTitle());
+            request.setDescription(ticketForm.getDescription());
+            request.setOtherIssue(ticketForm.getOtherIssue());
+
+            ticketService.createTicketForUser(
+                    authentication.getName(),
+                    ticketForm.getTargetUsername(),
+                    request
+            );
+
+            redirectAttributes.addFlashAttribute("successMessage", "Ticket created successfully for user.");
+            return "redirect:/admin/dashboard";
+        } catch (Exception e) {
+            List<UserResponse> users = userService.getAllUsers().stream()
+                    .filter(user -> user.getRole() == Role.USER && user.isEnabled())
+                    .toList();
+
+            model.addAttribute("username", authentication.getName());
+            model.addAttribute("users", users);
+            model.addAttribute("deviceTypes", DeviceType.values());
+            model.addAttribute("issueCategories", IssueCategory.values());
+            model.addAttribute("errorMessage", e.getMessage());
+            return "admin-ticket-form";
         }
     }
 }

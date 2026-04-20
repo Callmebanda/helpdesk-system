@@ -37,4 +37,5 @@ public class TicketResponse {
     private TicketPriority priority;
     private LocalDateTime dueAt;
     private boolean overdue;
+    private String createdByUsername;
 }
