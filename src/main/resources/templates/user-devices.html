@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>My Devices</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="layout">
+    <header class="topbar">
+        <h1>My Devices</h1>
+        <div>
+            <span th:text="'Signed in as: ' + ${username}"></span>
+            <a href="/user/dashboard" class="logout-btn">Dashboard</a>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+    </header>
+
+    <main class="content">
+        <div class="card">
+            <h2>Devices Assigned to Me</h2>
+
+            <table>
+                <thead>
+                <tr>
+                    <th>Asset Number</th>
+                    <th>Type</th>
+                    <th>Model</th>
+                    <th>Serial Number</th>
+                    <th>Building</th>
+                    <th>Office</th>
+                    <th>Status</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="device : ${devices}">
+                    <td th:text="${device.assetNumber}"></td>
+                    <td th:text="${device.deviceType}"></td>
+                    <td th:text="${device.model} ?: '-'"></td>
+                    <td th:text="${device.serialNumber} ?: '-'"></td>
+                    <td th:text="${device.building} ?: '-'"></td>
+                    <td th:text="${device.officeNumber} ?: '-'"></td>
+                    <td th:text="${device.status}"></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(devices)}">
+                    <td colspan="7">No devices assigned to you yet.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>Notice</h2>
+            <p>
+                If a device is missing from this list, or if this list shows a device you no longer have,
+                report it to the IT department for correction.
+            </p>
+        </div>
+    </main>
+</div>
+</body>
+</html>

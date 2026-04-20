@@ -11,6 +11,7 @@
         <h1>User Dashboard</h1>
         <div>
             <span th:text="'Signed in as: ' + ${username}"></span>
+            <a href="/user/devices" class="logout-btn">My Devices</a>
             <a href="/logout" class="logout-btn">Logout</a>
         </div>
     </header>

@@ -23,6 +23,11 @@ import helpdesk.dto.KnowledgeArticleResponse;
 import helpdesk.dto.UserTicketSummaryResponse;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import helpdesk.dto.AdminTicketFormRequest;
+import helpdesk.dto.AssignDeviceRequest;
+import helpdesk.dto.CreateDeviceRequest;
+import helpdesk.dto.DeviceResponse;
+import helpdesk.model.DeviceStatus;
+import helpdesk.service.DeviceService;
 
 import java.util.List;
 
@@ -35,6 +40,7 @@ public class PageController {
     private final UserService userService;
     private final KnowledgeBaseService knowledgeBaseService;
     private final UserImportService userImportService;
+    private final DeviceService deviceService;
 
     @GetMapping("/login")
     public String loginPage() {
@@ -552,5 +558,79 @@ public class PageController {
             model.addAttribute("errorMessage", e.getMessage());
             return "admin-ticket-form";
         }
+    }
+
+    @GetMapping("/admin/devices")
+    public String adminDevicesPage(Authentication authentication, Model model) {
+        String username = authentication.getName();
+
+        List<DeviceResponse> devices = deviceService.getAllDevices();
+        List<UserResponse> users = userService.getAllUsers().stream()
+                .filter(user -> user.isEnabled())
+                .toList();
+
+        model.addAttribute("username", username);
+        model.addAttribute("devices", devices);
+        model.addAttribute("users", users);
+        model.addAttribute("deviceForm", new CreateDeviceRequest());
+        model.addAttribute("deviceTypes", DeviceType.values());
+        model.addAttribute("deviceStatuses", DeviceStatus.values());
+
+        return "admin-devices";
+    }
+
+    @PostMapping("/admin/devices/create")
+    public String createDeviceFromPage(@Valid @ModelAttribute("deviceForm") CreateDeviceRequest deviceForm,
+                                       BindingResult bindingResult,
+                                       Authentication authentication,
+                                       Model model,
+                                       RedirectAttributes redirectAttributes) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("username", authentication.getName());
+            model.addAttribute("devices", deviceService.getAllDevices());
+            model.addAttribute("users", userService.getAllUsers());
+            model.addAttribute("deviceTypes", DeviceType.values());
+            model.addAttribute("deviceStatuses", DeviceStatus.values());
+            model.addAttribute("errorMessage", "Please correct the device form errors.");
+            return "admin-devices";
+        }
+
+        try {
+            deviceService.createDevice(deviceForm);
+            redirectAttributes.addFlashAttribute("successMessage", "Device created successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
+        return "redirect:/admin/devices";
+    }
+
+    @PostMapping("/admin/devices/{id}/assign")
+    public String assignDeviceFromPage(@PathVariable Long id,
+                                       @RequestParam String username,
+                                       RedirectAttributes redirectAttributes) {
+        try {
+            AssignDeviceRequest request = new AssignDeviceRequest();
+            request.setUsername(username);
+
+            deviceService.assignDevice(id, request);
+            redirectAttributes.addFlashAttribute("successMessage", "Device assigned successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
+        return "redirect:/admin/devices";
+    }
+
+    @GetMapping("/user/devices")
+    public String userDevicesPage(Authentication authentication, Model model) {
+        String username = authentication.getName();
+
+        List<DeviceResponse> devices = deviceService.getMyDevices(username);
+
+        model.addAttribute("username", username);
+        model.addAttribute("devices", devices);
+
+        return "user-devices";
     }
 }

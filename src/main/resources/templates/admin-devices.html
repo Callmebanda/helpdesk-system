@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Device Inventory</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="layout">
+    <header class="topbar">
+        <h1>Device Inventory</h1>
+        <div>
+            <span th:text="'Signed in as: ' + ${username}"></span>
+            <a href="/admin/dashboard" class="logout-btn">Dashboard</a>
+            <a href="/admin/users" class="logout-btn">Users</a>
+            <a href="/admin/knowledge" class="logout-btn">Knowledge Base</a>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+    </header>
+
+    <main class="content">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <div class="action-grid">
+            <div class="card">
+                <h2>Add Device</h2>
+
+                <form th:action="@{/admin/devices/create}" th:object="${deviceForm}" method="post" class="form">
+                    <label for="assetNumber">Asset Number</label>
+                    <input id="assetNumber" th:field="*{assetNumber}" type="text" required>
+
+                    <label for="deviceType">Device Type</label>
+                    <select id="deviceType" th:field="*{deviceType}" required>
+                        <option value="">-- Select Device --</option>
+                        <option th:each="device : ${deviceTypes}"
+                                th:value="${device}"
+                                th:text="${device}">
+                        </option>
+                    </select>
+
+                    <label for="model">Model</label>
+                    <input id="model" th:field="*{model}" type="text">
+
+                    <label for="serialNumber">Serial Number</label>
+                    <input id="serialNumber" th:field="*{serialNumber}" type="text">
+
+                    <label for="building">Building</label>
+                    <input id="building" th:field="*{building}" type="text">
+
+                    <label for="officeNumber">Office Number</label>
+                    <input id="officeNumber" th:field="*{officeNumber}" type="text">
+
+                    <label for="status">Status</label>
+                    <select id="status" th:field="*{status}">
+                        <option value="">ACTIVE</option>
+                        <option th:each="statusValue : ${deviceStatuses}"
+                                th:value="${statusValue}"
+                                th:text="${statusValue}">
+                        </option>
+                    </select>
+
+                    <label for="notes">Notes</label>
+                    <textarea id="notes" th:field="*{notes}" rows="3"></textarea>
+
+                    <button type="submit">Add Device</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Why this matters</h2>
+                <p>
+                    This inventory helps track official organization devices,
+                    where they are located, and who they are assigned to.
+                </p>
+                <p>
+                    Users should not freely edit official asset records. They can view assigned devices,
+                    and later we can add a request feature for reporting missing or extra devices.
+                </p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>All Devices</h2>
+
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Asset Number</th>
+                    <th>Type</th>
+                    <th>Model</th>
+                    <th>Serial</th>
+                    <th>Location</th>
+                    <th>Assigned To</th>
+                    <th>Status</th>
+                    <th>Assign</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="device : ${devices}">
+                    <td th:text="${device.id}"></td>
+                    <td th:text="${device.assetNumber}"></td>
+                    <td th:text="${device.deviceType}"></td>
+                    <td th:text="${device.model} ?: '-'"></td>
+                    <td th:text="${device.serialNumber} ?: '-'"></td>
+                    <td th:text="(${device.building} ?: '-') + ' / ' + (${device.officeNumber} ?: '-')"></td>
+                    <td th:text="${device.assignedUsername} ?: 'Not assigned'"></td>
+                    <td th:text="${device.status}"></td>
+                    <td>
+                        <form th:action="@{'/admin/devices/' + ${device.id} + '/assign'}" method="post" class="inline-form">
+                            <select name="username" required>
+                                <option value="">Select user</option>
+                                <option th:each="u : ${users}"
+                                        th:value="${u.username}"
+                                        th:text="${u.firstName + ' ' + u.lastName + ' (' + u.username + ')'}"
+                                        th:selected="${device.assignedUsername == u.username}">
+                                </option>
+                            </select>
+                            <button type="submit" class="primary-small-btn">Assign</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(devices)}">
+                    <td colspan="9">No devices found.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+</body>
+</html>

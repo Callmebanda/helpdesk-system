@@ -259,3 +259,13 @@ select, textarea {
 .danger-btn:hover {
     background: #991b1b;
 }
+
+.inline-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.inline-form select {
+    min-width: 180px;
+}
