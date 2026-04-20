@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Device Reports</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="layout">
+    <header class="topbar">
+        <h1>Device Reports</h1>
+        <div>
+            <span th:text="'Signed in as: ' + ${username}"></span>
+            <a href="/admin/dashboard" class="logout-btn">Dashboard</a>
+            <a href="/admin/devices" class="logout-btn">Devices</a>
+            <a href="/admin/users" class="logout-btn">Users</a>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+    </header>
+
+    <main class="content">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <div class="card">
+            <h2>Submitted Device Reports</h2>
+
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Reported By</th>
+                    <th>Department</th>
+                    <th>Asset Number</th>
+                    <th>Report Type</th>
+                    <th>Description</th>
+                    <th>Location</th>
+                    <th>Status</th>
+                    <th>Review</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="report : ${reports}">
+                    <td th:text="${report.id}"></td>
+                    <td th:text="${report.reportedByFirstName + ' ' + report.reportedByLastName + ' (' + report.reportedByUsername + ')'}"></td>
+                    <td th:text="${report.reportedByDepartment} ?: '-'"></td>
+                    <td th:text="${report.assetNumber} ?: '-'"></td>
+                    <td th:text="${report.reportType}"></td>
+                    <td th:text="${report.description}"></td>
+                    <td th:text="(${report.building} ?: '-') + ' / ' + (${report.officeNumber} ?: '-')"></td>
+                    <td th:text="${report.status}"></td>
+                    <td>
+                        <form th:action="@{'/admin/device-reports/' + ${report.id} + '/review'}"
+                              method="post"
+                              class="form">
+
+                            <select name="status" required>
+                                <option th:each="statusValue : ${reportStatuses}"
+                                        th:value="${statusValue}"
+                                        th:text="${statusValue}"
+                                        th:selected="${report.status == statusValue}">
+                                </option>
+                            </select>
+
+                            <textarea name="reviewNote" rows="3"
+                                      placeholder="Review note"
+                                      th:text="${report.reviewNote}"></textarea>
+
+                            <button type="submit" class="primary-small-btn">Save</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(reports)}">
+                    <td colspan="9">No device reports found.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+</body>
+</html>

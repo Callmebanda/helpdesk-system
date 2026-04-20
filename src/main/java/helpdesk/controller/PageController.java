@@ -28,6 +28,12 @@ import helpdesk.dto.CreateDeviceRequest;
 import helpdesk.dto.DeviceResponse;
 import helpdesk.model.DeviceStatus;
 import helpdesk.service.DeviceService;
+import helpdesk.dto.CreateDeviceReportRequest;
+import helpdesk.dto.DeviceReportResponse;
+import helpdesk.dto.ReviewDeviceReportRequest;
+import helpdesk.model.DeviceReportStatus;
+import helpdesk.model.DeviceReportType;
+import helpdesk.service.DeviceReportService;
 
 import java.util.List;
 
@@ -41,6 +47,7 @@ public class PageController {
     private final KnowledgeBaseService knowledgeBaseService;
     private final UserImportService userImportService;
     private final DeviceService deviceService;
+    private final DeviceReportService deviceReportService;
 
     @GetMapping("/login")
     public String loginPage() {
@@ -632,5 +639,92 @@ public class PageController {
         model.addAttribute("devices", devices);
 
         return "user-devices";
+    }
+
+    @GetMapping("/user/device-reports")
+    public String userDeviceReportsPage(Authentication authentication, Model model) {
+        String username = authentication.getName();
+
+        List<DeviceReportResponse> reports = deviceReportService.getMyReports(username);
+
+        model.addAttribute("username", username);
+        model.addAttribute("reports", reports);
+
+        return "user-device-reports";
+    }
+
+    @GetMapping("/user/device-reports/new")
+    public String newUserDeviceReportPage(Authentication authentication, Model model) {
+        String username = authentication.getName();
+
+        List<DeviceResponse> devices = deviceService.getMyDevices(username);
+
+        model.addAttribute("username", username);
+        model.addAttribute("reportForm", new CreateDeviceReportRequest());
+        model.addAttribute("devices", devices);
+        model.addAttribute("reportTypes", DeviceReportType.values());
+
+        return "user-device-report-form";
+    }
+
+    @PostMapping("/user/device-reports/new")
+    public String submitUserDeviceReport(@Valid @ModelAttribute("reportForm") CreateDeviceReportRequest reportForm,
+                                         BindingResult bindingResult,
+                                         Authentication authentication,
+                                         Model model,
+                                         RedirectAttributes redirectAttributes) {
+        String username = authentication.getName();
+
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("username", username);
+            model.addAttribute("devices", deviceService.getMyDevices(username));
+            model.addAttribute("reportTypes", DeviceReportType.values());
+            return "user-device-report-form";
+        }
+
+        try {
+            deviceReportService.createReport(username, reportForm);
+            redirectAttributes.addFlashAttribute("successMessage", "Device report submitted successfully.");
+            return "redirect:/user/device-reports";
+        } catch (Exception e) {
+            model.addAttribute("username", username);
+            model.addAttribute("devices", deviceService.getMyDevices(username));
+            model.addAttribute("reportTypes", DeviceReportType.values());
+            model.addAttribute("errorMessage", e.getMessage());
+            return "user-device-report-form";
+        }
+    }
+
+    @GetMapping("/admin/device-reports")
+    public String adminDeviceReportsPage(Authentication authentication, Model model) {
+        String username = authentication.getName();
+
+        List<DeviceReportResponse> reports = deviceReportService.getAllReports();
+
+        model.addAttribute("username", username);
+        model.addAttribute("reports", reports);
+        model.addAttribute("reportStatuses", DeviceReportStatus.values());
+
+        return "admin-device-reports";
+    }
+
+    @PostMapping("/admin/device-reports/{id}/review")
+    public String reviewDeviceReportFromPage(@PathVariable Long id,
+                                             @RequestParam DeviceReportStatus status,
+                                             @RequestParam(required = false) String reviewNote,
+                                             Authentication authentication,
+                                             RedirectAttributes redirectAttributes) {
+        try {
+            ReviewDeviceReportRequest request = new ReviewDeviceReportRequest();
+            request.setStatus(status);
+            request.setReviewNote(reviewNote);
+
+            deviceReportService.reviewReport(id, request, authentication.getName());
+            redirectAttributes.addFlashAttribute("successMessage", "Device report reviewed successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
+        return "redirect:/admin/device-reports";
     }
 }

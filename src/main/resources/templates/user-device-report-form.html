@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Report Device Issue</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="layout">
+    <header class="topbar">
+        <h1>Report Device Issue</h1>
+        <div>
+            <span th:text="'Signed in as: ' + ${username}"></span>
+            <a href="/user/device-reports" class="logout-btn">My Reports</a>
+            <a href="/user/devices" class="logout-btn">My Devices</a>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+    </header>
+
+    <main class="content">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <div class="card">
+            <h2>Submit Device Report</h2>
+
+            <form th:action="@{/user/device-reports/new}" th:object="${reportForm}" method="post" class="form">
+
+                <label for="deviceId">Known Assigned Device</label>
+                <select id="deviceId" th:field="*{deviceId}">
+                    <option value="">-- Not listed / extra device --</option>
+                    <option th:each="device : ${devices}"
+                            th:value="${device.id}"
+                            th:text="${device.assetNumber + ' - ' + device.deviceType}">
+                    </option>
+                </select>
+
+                <label for="assetNumber">Asset Number</label>
+                <input id="assetNumber" th:field="*{assetNumber}" type="text"
+                       placeholder="Use this if the device is not listed above">
+
+                <label for="reportType">Report Type</label>
+                <select id="reportType" th:field="*{reportType}" required>
+                    <option value="">-- Select Report Type --</option>
+                    <option th:each="type : ${reportTypes}"
+                            th:value="${type}"
+                            th:text="${type}">
+                    </option>
+                </select>
+
+                <label for="building">Current Building</label>
+                <input id="building" th:field="*{building}" type="text">
+
+                <label for="officeNumber">Current Office Number</label>
+                <input id="officeNumber" th:field="*{officeNumber}" type="text">
+
+                <label for="description">Description</label>
+                <textarea id="description" th:field="*{description}" rows="5" required
+                          placeholder="Explain what is wrong with the device record or physical device."></textarea>
+
+                <button type="submit">Submit Report</button>
+            </form>
+        </div>
+    </main>
+</div>
+</body>
+</html>

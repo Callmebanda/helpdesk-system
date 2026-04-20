@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>My Device Reports</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="layout">
+    <header class="topbar">
+        <h1>My Device Reports</h1>
+        <div>
+            <span th:text="'Signed in as: ' + ${username}"></span>
+            <a href="/user/dashboard" class="logout-btn">Dashboard</a>
+            <a href="/user/devices" class="logout-btn">My Devices</a>
+            <a href="/user/device-reports/new" class="logout-btn">New Report</a>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+    </header>
+
+    <main class="content">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <div class="card">
+            <h2>Reports Submitted by Me</h2>
+
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Asset Number</th>
+                    <th>Type</th>
+                    <th>Description</th>
+                    <th>Status</th>
+                    <th>Review Note</th>
+                    <th>Created</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="report : ${reports}">
+                    <td th:text="${report.id}"></td>
+                    <td th:text="${report.assetNumber} ?: '-'"></td>
+                    <td th:text="${report.reportType}"></td>
+                    <td th:text="${report.description}"></td>
+                    <td th:text="${report.status}"></td>
+                    <td th:text="${report.reviewNote} ?: '-'"></td>
+                    <td th:text="${report.createdAt}"></td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(reports)}">
+                    <td colspan="7">No device reports submitted yet.</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+</body>
+</html>
