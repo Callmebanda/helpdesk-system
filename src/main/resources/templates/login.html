@@ -19,6 +19,10 @@
             You have been logged out.
         </div>
 
+        <div th:if="${param.expired}" class="alert error">
+            Your session expired or you logged in somewhere else. Please sign in again.
+        </div>
+
         <form th:action="@{/login}" method="post" class="form">
             <label for="username">Username</label>
             <input id="username" name="username" type="text" required>
