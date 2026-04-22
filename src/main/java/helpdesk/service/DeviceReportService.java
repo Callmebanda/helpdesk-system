@@ -13,6 +13,17 @@ import helpdesk.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import helpdesk.model.DeviceReportType;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+
+import java.util.ArrayList;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -91,6 +102,67 @@ public class DeviceReportService {
 
         DeviceReport savedReport = deviceReportRepository.save(report);
         return mapToResponse(savedReport);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<DeviceReportResponse> searchReportsPage(DeviceReportStatus status,
+                                                        DeviceReportType reportType,
+                                                        String username,
+                                                        String assetNumber,
+                                                        String department,
+                                                        int page,
+                                                        int size) {
+
+        int safePage = Math.max(page, 0);
+        int safeSize = size < 1 ? 10 : Math.min(size, 50);
+
+        Pageable pageable = PageRequest.of(
+                safePage,
+                safeSize,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        Specification<DeviceReport> specification = (root, query, criteriaBuilder) -> {
+            ArrayList<Predicate> predicates = new ArrayList<>();
+
+            if (status != null) {
+                predicates.add(criteriaBuilder.equal(root.get("status"), status));
+            }
+
+            if (reportType != null) {
+                predicates.add(criteriaBuilder.equal(root.get("reportType"), reportType));
+            }
+
+            if (assetNumber != null && !assetNumber.isBlank()) {
+                predicates.add(criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("assetNumber")),
+                        "%" + assetNumber.trim().toLowerCase() + "%"
+                ));
+            }
+
+            if ((username != null && !username.isBlank()) || (department != null && !department.isBlank())) {
+                Join<DeviceReport, User> userJoin = root.join("reportedBy", JoinType.LEFT);
+
+                if (username != null && !username.isBlank()) {
+                    predicates.add(criteriaBuilder.like(
+                            criteriaBuilder.lower(userJoin.get("username")),
+                            "%" + username.trim().toLowerCase() + "%"
+                    ));
+                }
+
+                if (department != null && !department.isBlank()) {
+                    predicates.add(criteriaBuilder.like(
+                            criteriaBuilder.lower(userJoin.get("department")),
+                            "%" + department.trim().toLowerCase() + "%"
+                    ));
+                }
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return deviceReportRepository.findAll(specification, pageable)
+                .map(this::mapToResponse);
     }
 
     private DeviceReportResponse mapToResponse(DeviceReport report) {

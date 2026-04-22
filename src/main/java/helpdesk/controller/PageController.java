@@ -764,14 +764,44 @@ public class PageController {
     }
 
     @GetMapping("/admin/device-reports")
-    public String adminDeviceReportsPage(Authentication authentication, Model model) {
+    public String adminDeviceReportsPage(Authentication authentication,
+                                         Model model,
+                                         @RequestParam(required = false) DeviceReportStatus status,
+                                         @RequestParam(required = false) DeviceReportType reportType,
+                                         @RequestParam(required = false) String usernameFilter,
+                                         @RequestParam(required = false) String assetNumber,
+                                         @RequestParam(required = false) String department,
+                                         @RequestParam(defaultValue = "0") int page,
+                                         @RequestParam(defaultValue = "10") int size) {
         String username = authentication.getName();
 
-        List<DeviceReportResponse> reports = deviceReportService.getAllReports();
+        Page<DeviceReportResponse> reportPage = deviceReportService.searchReportsPage(
+                status,
+                reportType,
+                usernameFilter,
+                assetNumber,
+                department,
+                page,
+                size
+        );
 
         model.addAttribute("username", username);
-        model.addAttribute("reports", reports);
+        model.addAttribute("reports", reportPage.getContent());
         model.addAttribute("reportStatuses", DeviceReportStatus.values());
+        model.addAttribute("reportTypes", DeviceReportType.values());
+
+        model.addAttribute("currentPage", reportPage.getNumber());
+        model.addAttribute("totalPages", reportPage.getTotalPages());
+        model.addAttribute("totalItems", reportPage.getTotalElements());
+        model.addAttribute("pageSize", size);
+        model.addAttribute("hasPrevious", reportPage.hasPrevious());
+        model.addAttribute("hasNext", reportPage.hasNext());
+
+        model.addAttribute("selectedStatus", status);
+        model.addAttribute("selectedReportType", reportType);
+        model.addAttribute("selectedUsernameFilter", usernameFilter);
+        model.addAttribute("selectedAssetNumber", assetNumber);
+        model.addAttribute("selectedDepartment", department);
 
         return "admin-device-reports";
     }
