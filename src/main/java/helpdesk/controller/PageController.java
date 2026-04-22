@@ -165,14 +165,41 @@ public class PageController {
     }
     @GetMapping("/admin/users")
     public String adminUsersPage(Authentication authentication,
-                                 Model model) {
+                                 Model model,
+                                 @RequestParam(required = false) String usernameFilter,
+                                 @RequestParam(required = false) Role role,
+                                 @RequestParam(required = false) String department,
+                                 @RequestParam(required = false) Boolean enabled,
+                                 @RequestParam(defaultValue = "0") int page,
+                                 @RequestParam(defaultValue = "10") int size) {
+
         String username = authentication.getName();
-        List<UserResponse> users = userService.getAllUsers();
+
+        Page<UserResponse> userPage = userService.searchUsersPage(
+                usernameFilter,
+                role,
+                department,
+                enabled,
+                page,
+                size
+        );
 
         model.addAttribute("username", username);
-        model.addAttribute("users", users);
+        model.addAttribute("users", userPage.getContent());
         model.addAttribute("userForm", new CreateUserRequest());
         model.addAttribute("roles", Role.values());
+
+        model.addAttribute("currentPage", userPage.getNumber());
+        model.addAttribute("totalPages", userPage.getTotalPages());
+        model.addAttribute("totalItems", userPage.getTotalElements());
+        model.addAttribute("pageSize", size);
+        model.addAttribute("hasPrevious", userPage.hasPrevious());
+        model.addAttribute("hasNext", userPage.hasNext());
+
+        model.addAttribute("selectedUsernameFilter", usernameFilter);
+        model.addAttribute("selectedRole", role);
+        model.addAttribute("selectedDepartment", department);
+        model.addAttribute("selectedEnabled", enabled);
 
         return "admin-users";
     }

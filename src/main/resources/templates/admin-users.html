@@ -25,6 +25,95 @@
         <div th:if="${successMessage}" class="alert success" th:text="${successMessage}"></div>
         <div th:if="${errorMessage}" class="alert error" th:text="${errorMessage}"></div>
 
+        <div class="card">
+            <h2>Search and Filter Users</h2>
+
+            <form th:action="@{/admin/users}" method="get" class="filter-grid">
+                <div>
+                    <label for="usernameFilter">Username</label>
+                    <input id="usernameFilter"
+                           name="usernameFilter"
+                           type="text"
+                           placeholder="e.g. user001"
+                           th:value="${selectedUsernameFilter}">
+                </div>
+
+                <div>
+                    <label for="role">Role</label>
+                    <select id="role" name="role">
+                        <option value="">All</option>
+                        <option th:each="roleValue : ${roles}"
+                                th:value="${roleValue}"
+                                th:text="${roleValue}"
+                                th:selected="${selectedRole == roleValue}">
+                        </option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="department">Department</label>
+                    <input id="department"
+                           name="department"
+                           type="text"
+                           placeholder="e.g. Finance"
+                           th:value="${selectedDepartment}">
+                </div>
+
+                <div>
+                    <label for="enabled">Enabled</label>
+                    <select id="enabled" name="enabled">
+                        <option value="">All</option>
+                        <option value="true" th:selected="${selectedEnabled == true}">Yes</option>
+                        <option value="false" th:selected="${selectedEnabled == false}">No</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="size">Page Size</label>
+                    <select id="size" name="size">
+                        <option value="10" th:selected="${pageSize == 10}">10</option>
+                        <option value="20" th:selected="${pageSize == 20}">20</option>
+                        <option value="50" th:selected="${pageSize == 50}">50</option>
+                    </select>
+                </div>
+
+                <div class="filter-actions">
+                    <button type="submit">Apply Filters</button>
+                    <a href="/admin/users" class="secondary-link-btn">Clear</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="pagination-bar" th:if="${totalPages > 1}">
+            <a th:if="${hasPrevious}"
+               th:href="@{/admin/users(
+            page=${currentPage - 1},
+            size=${pageSize},
+            usernameFilter=${selectedUsernameFilter},
+            role=${selectedRole},
+            department=${selectedDepartment},
+            enabled=${selectedEnabled}
+       )}"
+               class="secondary-link-btn">Previous</a>
+
+            <span th:text="'Page ' + (${currentPage} + 1) + ' of ' + ${totalPages}"></span>
+
+            <a th:if="${hasNext}"
+               th:href="@{/admin/users(
+            page=${currentPage + 1},
+            size=${pageSize},
+            usernameFilter=${selectedUsernameFilter},
+            role=${selectedRole},
+            department=${selectedDepartment},
+            enabled=${selectedEnabled}
+       )}"
+               class="secondary-link-btn">Next</a>
+        </div>
+
+        <div class="pagination-info">
+            <span th:text="'Total matching users: ' + ${totalItems}"></span>
+        </div>
+
         <div class="action-grid">
             <div class="card">
                 <h2>Create User</h2>
