@@ -648,12 +648,15 @@ public class PageController {
                 size
         );
 
+        DeviceInventorySummaryResponse deviceSummary = deviceService.getDeviceInventorySummary();
+
         List<UserResponse> users = userService.getAllUsers().stream()
                 .filter(user -> user.isEnabled())
                 .toList();
 
         model.addAttribute("username", username);
         model.addAttribute("devices", devicePage.getContent());
+        model.addAttribute("deviceSummary", deviceSummary);
         model.addAttribute("users", users);
         model.addAttribute("deviceForm", new CreateDeviceRequest());
         model.addAttribute("deviceTypes", DeviceType.values());
@@ -671,6 +674,7 @@ public class PageController {
         model.addAttribute("selectedStatus", status);
         model.addAttribute("selectedAssignedUsername", assignedUsername);
         model.addAttribute("selectedBuilding", building);
+
 
         return "admin-devices";
     }

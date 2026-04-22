@@ -20,6 +20,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import helpdesk.dto.DeviceCategoryCountResponse;
+import helpdesk.dto.DeviceInventorySummaryResponse;
+import helpdesk.model.DeviceType;
 
 import java.util.ArrayList;
 
@@ -146,6 +149,25 @@ public class DeviceService {
 
         return deviceRepository.findAll(specification, pageable)
                 .map(this::mapToResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public DeviceInventorySummaryResponse getDeviceInventorySummary() {
+        List<DeviceCategoryCountResponse> categoryCounts = java.util.Arrays.stream(DeviceType.values())
+                .map(deviceType -> DeviceCategoryCountResponse.builder()
+                        .deviceType(deviceType)
+                        .totalDevices(deviceRepository.countByDeviceType(deviceType))
+                        .assignedDevices(deviceRepository.countByDeviceTypeAndAssignedUserIsNotNull(deviceType))
+                        .unassignedDevices(deviceRepository.countByDeviceTypeAndAssignedUserIsNull(deviceType))
+                        .build())
+                .toList();
+
+        return DeviceInventorySummaryResponse.builder()
+                .totalDevices(deviceRepository.count())
+                .assignedDevices(deviceRepository.countByAssignedUserIsNotNull())
+                .unassignedDevices(deviceRepository.countByAssignedUserIsNull())
+                .categoryCounts(categoryCounts)
+                .build();
     }
 
     private DeviceResponse mapToResponse(Device device) {

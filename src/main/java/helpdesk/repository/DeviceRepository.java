@@ -1,6 +1,7 @@
 package helpdesk.repository;
 
 import helpdesk.model.Device;
+import helpdesk.model.DeviceType;
 import helpdesk.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -15,4 +16,14 @@ public interface DeviceRepository extends JpaRepository<Device, Long>, JpaSpecif
     Optional<Device> findByAssetNumber(String assetNumber);
 
     List<Device> findByAssignedUser(User assignedUser);
+
+    long countByDeviceType(DeviceType deviceType);
+
+    long countByDeviceTypeAndAssignedUserIsNotNull(DeviceType deviceType);
+
+    long countByDeviceTypeAndAssignedUserIsNull(DeviceType deviceType);
+
+    long countByAssignedUserIsNotNull();
+
+    long countByAssignedUserIsNull();
 }

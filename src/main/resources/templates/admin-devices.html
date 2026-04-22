@@ -22,6 +22,46 @@
     <main class="content">
         <div th:replace="~{fragments/alerts :: alerts}"></div>
 
+        <div class="summary-grid">
+            <div class="card summary-card">
+                <h3>Total Devices</h3>
+                <p th:text="${deviceSummary.totalDevices}"></p>
+            </div>
+
+            <div class="card summary-card">
+                <h3>Assigned Devices</h3>
+                <p th:text="${deviceSummary.assignedDevices}"></p>
+            </div>
+
+            <div class="card summary-card">
+                <h3>Unassigned Devices</h3>
+                <p th:text="${deviceSummary.unassignedDevices}"></p>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Device Category Summary</h2>
+
+            <table>
+                <thead>
+                <tr>
+                    <th>Device Category</th>
+                    <th>Total</th>
+                    <th>Assigned</th>
+                    <th>Unassigned</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="category : ${deviceSummary.categoryCounts}">
+                    <td th:text="${category.deviceType}"></td>
+                    <td th:text="${category.totalDevices}"></td>
+                    <td th:text="${category.assignedDevices}"></td>
+                    <td th:text="${category.unassignedDevices}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
         <div class="card">
             <h2>Search and Filter Devices</h2>
 
