@@ -599,6 +599,115 @@ public class TicketService {
                 .map(this::mapToAdminResponse);
     }
 
+    @Transactional(readOnly = true)
+    public Page<AdminTicketResponse> searchAssignedTicketsPage(String technicianUsername,
+                                                               TicketStatus status,
+                                                               TicketPriority priority,
+                                                               Boolean overdue,
+                                                               int page,
+                                                               int size) {
+        User technician = userRepository.findByUsername(technicianUsername)
+                .orElseThrow(() -> new RuntimeException("Technician not found"));
+
+        int safePage = Math.max(page, 0);
+        int safeSize = size < 1 ? 10 : Math.min(size, 50);
+
+        Pageable pageable = PageRequest.of(
+                safePage,
+                safeSize,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        Specification<Ticket> specification = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            predicates.add(criteriaBuilder.equal(root.get("assignedTechnician"), technician));
+
+            if (status != null) {
+                predicates.add(criteriaBuilder.equal(root.get("status"), status));
+            }
+
+            if (priority != null) {
+                predicates.add(criteriaBuilder.equal(root.get("priority"), priority));
+            }
+
+            if (overdue != null) {
+                Predicate overduePredicate = criteriaBuilder.and(
+                        criteriaBuilder.notEqual(root.get("status"), TicketStatus.RESOLVED),
+                        criteriaBuilder.lessThan(root.get("dueAt"), LocalDateTime.now())
+                );
+
+                if (overdue) {
+                    predicates.add(overduePredicate);
+                } else {
+                    predicates.add(criteriaBuilder.not(overduePredicate));
+                }
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return ticketRepository.findAll(specification, pageable)
+                .map(this::mapToAdminResponse);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<TicketResponse> searchMyTicketsPage(String username,
+                                                    TicketStatus status,
+                                                    DeviceType deviceType,
+                                                    TicketPriority priority,
+                                                    Boolean overdue,
+                                                    int page,
+                                                    int size) {
+        User user = userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        int safePage = Math.max(page, 0);
+        int safeSize = size < 1 ? 10 : Math.min(size, 50);
+
+        Pageable pageable = PageRequest.of(
+                safePage,
+                safeSize,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        Specification<Ticket> specification = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            predicates.add(criteriaBuilder.equal(root.get("user"), user));
+
+            if (status != null) {
+                predicates.add(criteriaBuilder.equal(root.get("status"), status));
+            }
+
+            if (deviceType != null) {
+                predicates.add(criteriaBuilder.equal(root.get("deviceType"), deviceType));
+            }
+
+            if (priority != null) {
+                predicates.add(criteriaBuilder.equal(root.get("priority"), priority));
+            }
+
+            if (overdue != null) {
+                Predicate overduePredicate = criteriaBuilder.and(
+                        criteriaBuilder.notEqual(root.get("status"), TicketStatus.RESOLVED),
+                        criteriaBuilder.lessThan(root.get("dueAt"), LocalDateTime.now())
+                );
+
+                if (overdue) {
+                    predicates.add(overduePredicate);
+                } else {
+                    predicates.add(criteriaBuilder.not(overduePredicate));
+                }
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return ticketRepository.findAll(specification, pageable)
+                .map(this::mapToUserResponse);
+    }
+
     private void validateAssignedTechnician(Ticket ticket, String technicianUsername) {
         if (ticket.getAssignedTechnician() == null) {
             throw new RuntimeException("Ticket is not assigned to any technician");

@@ -80,22 +80,33 @@ public class PageController {
                                 @RequestParam(required = false) TicketStatus status,
                                 @RequestParam(required = false) DeviceType deviceType,
                                 @RequestParam(required = false) TicketPriority priority,
-                                @RequestParam(required = false) Boolean overdue) {
+                                @RequestParam(required = false) Boolean overdue,
+                                @RequestParam(defaultValue = "0") int page,
+                                @RequestParam(defaultValue = "10") int size) {
         String username = authentication.getName();
 
-        List<TicketResponse> tickets = ticketService.searchMyTickets(
+        Page<TicketResponse> ticketPage = ticketService.searchMyTicketsPage(
                 username,
                 status,
                 deviceType,
                 priority,
-                overdue
+                overdue,
+                page,
+                size
         );
 
         UserTicketSummaryResponse summary = ticketService.getUserTicketSummary(username);
 
         model.addAttribute("username", username);
-        model.addAttribute("tickets", tickets);
+        model.addAttribute("tickets", ticketPage.getContent());
         model.addAttribute("summary", summary);
+
+        model.addAttribute("currentPage", ticketPage.getNumber());
+        model.addAttribute("totalPages", ticketPage.getTotalPages());
+        model.addAttribute("totalItems", ticketPage.getTotalElements());
+        model.addAttribute("pageSize", size);
+        model.addAttribute("hasPrevious", ticketPage.hasPrevious());
+        model.addAttribute("hasNext", ticketPage.hasNext());
 
         model.addAttribute("statuses", TicketStatus.values());
         model.addAttribute("deviceTypes", DeviceType.values());
@@ -265,21 +276,32 @@ public class PageController {
                                 Model model,
                                 @RequestParam(required = false) TicketStatus status,
                                 @RequestParam(required = false) TicketPriority priority,
-                                @RequestParam(required = false) Boolean overdue) {
+                                @RequestParam(required = false) Boolean overdue,
+                                @RequestParam(defaultValue = "0") int page,
+                                @RequestParam(defaultValue = "10") int size) {
         String username = authentication.getName();
 
-        List<AdminTicketResponse> tickets = ticketService.searchAssignedTickets(
+        Page<AdminTicketResponse> ticketPage = ticketService.searchAssignedTicketsPage(
                 username,
                 status,
                 priority,
-                overdue
+                overdue,
+                page,
+                size
         );
 
         TechTicketSummaryResponse summary = ticketService.getTechnicianTicketSummary(username);
 
         model.addAttribute("username", username);
-        model.addAttribute("tickets", tickets);
+        model.addAttribute("tickets", ticketPage.getContent());
         model.addAttribute("summary", summary);
+
+        model.addAttribute("currentPage", ticketPage.getNumber());
+        model.addAttribute("totalPages", ticketPage.getTotalPages());
+        model.addAttribute("totalItems", ticketPage.getTotalElements());
+        model.addAttribute("pageSize", size);
+        model.addAttribute("hasPrevious", ticketPage.hasPrevious());
+        model.addAttribute("hasNext", ticketPage.hasNext());
 
         model.addAttribute("statuses", TicketStatus.values());
         model.addAttribute("priorities", TicketPriority.values());
