@@ -170,6 +170,14 @@ public class DeviceService {
                 .build();
     }
 
+    @Transactional(readOnly = true)
+    public DeviceResponse getDeviceById(Long id) {
+        Device device = deviceRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Device not found"));
+
+        return mapToResponse(device);
+    }
+
     private DeviceResponse mapToResponse(Device device) {
         User assignedUser = device.getAssignedUser();
 

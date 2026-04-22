@@ -705,6 +705,48 @@ public class PageController {
         return "redirect:/admin/devices";
     }
 
+    @GetMapping("/admin/devices/{id}/assign")
+    public String deviceAssignPage(@PathVariable Long id,
+                                   Authentication authentication,
+                                   Model model,
+                                   @RequestParam(required = false) String usernameFilter,
+                                   @RequestParam(required = false) Role role,
+                                   @RequestParam(required = false) String department,
+                                   @RequestParam(defaultValue = "0") int page,
+                                   @RequestParam(defaultValue = "10") int size) {
+
+        String username = authentication.getName();
+
+        DeviceResponse device = deviceService.getDeviceById(id);
+
+        Page<UserResponse> userPage = userService.searchUsersPage(
+                usernameFilter,
+                role,
+                department,
+                true,
+                page,
+                size
+        );
+
+        model.addAttribute("username", username);
+        model.addAttribute("device", device);
+        model.addAttribute("users", userPage.getContent());
+        model.addAttribute("roles", Role.values());
+
+        model.addAttribute("currentPage", userPage.getNumber());
+        model.addAttribute("totalPages", userPage.getTotalPages());
+        model.addAttribute("totalItems", userPage.getTotalElements());
+        model.addAttribute("pageSize", size);
+        model.addAttribute("hasPrevious", userPage.hasPrevious());
+        model.addAttribute("hasNext", userPage.hasNext());
+
+        model.addAttribute("selectedUsernameFilter", usernameFilter);
+        model.addAttribute("selectedRole", role);
+        model.addAttribute("selectedDepartment", department);
+
+        return "admin-device-assign";
+    }
+
     @PostMapping("/admin/devices/{id}/assign")
     public String assignDeviceFromPage(@PathVariable Long id,
                                        @RequestParam String username,
@@ -719,7 +761,7 @@ public class PageController {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
         }
 
-        return "redirect:/admin/devices";
+        return "redirect:/admin/devices/" + id + "/assign";
     }
 
     @GetMapping("/user/devices")

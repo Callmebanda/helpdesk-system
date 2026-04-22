@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Assign Device</title>
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+<div class="layout">
+    <header class="topbar">
+        <h1>Assign Device</h1>
+        <div>
+            <span th:text="'Signed in as: ' + ${username}"></span>
+            <a href="/admin/devices" class="logout-btn">Devices</a>
+            <a href="/admin/dashboard" class="logout-btn">Dashboard</a>
+            <a href="/logout" class="logout-btn">Logout</a>
+        </div>
+    </header>
+
+    <main class="content">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
+        <div class="card">
+            <h2>Selected Device</h2>
+
+            <div class="detail-grid">
+                <div><strong>Asset Number:</strong> <span th:text="${device.assetNumber}"></span></div>
+                <div><strong>Device Type:</strong> <span th:text="${device.deviceType}"></span></div>
+                <div><strong>Model:</strong> <span th:text="${device.model} ?: '-'"></span></div>
+                <div><strong>Serial Number:</strong> <span th:text="${device.serialNumber} ?: '-'"></span></div>
+                <div><strong>Building:</strong> <span th:text="${device.building} ?: '-'"></span></div>
+                <div><strong>Office:</strong> <span th:text="${device.officeNumber} ?: '-'"></span></div>
+                <div><strong>Status:</strong> <span th:text="${device.status}"></span></div>
+                <div>
+                    <strong>Currently Assigned To:</strong>
+                    <span th:text="${device.assignedUsername} ?: 'Not assigned'"></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Search User to Assign</h2>
+
+            <form th:action="@{'/admin/devices/' + ${device.id} + '/assign'}" method="get" class="filter-grid">
+                <div>
+                    <label for="usernameFilter">Username</label>
+                    <input id="usernameFilter"
+                           name="usernameFilter"
+                           type="text"
+                           placeholder="e.g. user001"
+                           th:value="${selectedUsernameFilter}">
+                </div>
+
+                <div>
+                    <label for="role">Role</label>
+                    <select id="role" name="role">
+                        <option value="">All</option>
+                        <option th:each="roleValue : ${roles}"
+                                th:value="${roleValue}"
+                                th:text="${roleValue}"
+                                th:selected="${selectedRole == roleValue}">
+                        </option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="department">Department</label>
+                    <input id="department"
+                           name="department"
+                           type="text"
+                           placeholder="e.g. Finance"
+                           th:value="${selectedDepartment}">
+                </div>
+
+                <div>
+                    <label for="size">Page Size</label>
+                    <select id="size" name="size">
+                        <option value="10" th:selected="${pageSize == 10}">10</option>
+                        <option value="20" th:selected="${pageSize == 20}">20</option>
+                        <option value="50" th:selected="${pageSize == 50}">50</option>
+                    </select>
+                </div>
+
+                <div class="filter-actions">
+                    <button type="submit">Search</button>
+                    <a th:href="@{'/admin/devices/' + ${device.id} + '/assign'}" class="secondary-link-btn">Clear</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Matching Users</h2>
+
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Building</th>
+                    <th>Office</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="user : ${users}">
+                    <td th:text="${user.id}"></td>
+                    <td th:text="${user.username}"></td>
+                    <td th:text="${user.role}"></td>
+                    <td th:text="${user.firstName + ' ' + user.lastName}"></td>
+                    <td th:text="${user.department} ?: '-'"></td>
+                    <td th:text="${user.building} ?: '-'"></td>
+                    <td th:text="${user.officeNumber} ?: '-'"></td>
+                    <td>
+                        <form th:action="@{'/admin/devices/' + ${device.id} + '/assign'}" method="post">
+                            <input type="hidden" name="username" th:value="${user.username}">
+                            <button type="submit" class="primary-small-btn">Assign</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(users)}">
+                    <td colspan="8">No matching users found.</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <div class="pagination-bar" th:if="${totalPages > 1}">
+                <a th:if="${hasPrevious}"
+                   th:href="@{'/admin/devices/' + ${device.id} + '/assign'(
+                        page=${currentPage - 1},
+                        size=${pageSize},
+                        usernameFilter=${selectedUsernameFilter},
+                        role=${selectedRole},
+                        department=${selectedDepartment}
+                   )}"
+                   class="secondary-link-btn">Previous</a>
+
+                <span th:text="'Page ' + (${currentPage} + 1) + ' of ' + ${totalPages}"></span>
+
+                <a th:if="${hasNext}"
+                   th:href="@{'/admin/devices/' + ${device.id} + '/assign'(
+                        page=${currentPage + 1},
+                        size=${pageSize},
+                        usernameFilter=${selectedUsernameFilter},
+                        role=${selectedRole},
+                        department=${selectedDepartment}
+                   )}"
+                   class="secondary-link-btn">Next</a>
+            </div>
+
+            <div class="pagination-info">
+                <span th:text="'Total matching users: ' + ${totalItems}"></span>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>
