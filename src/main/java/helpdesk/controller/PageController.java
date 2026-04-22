@@ -606,20 +606,50 @@ public class PageController {
     }
 
     @GetMapping("/admin/devices")
-    public String adminDevicesPage(Authentication authentication, Model model) {
+    public String adminDevicesPage(Authentication authentication,
+                                   Model model,
+                                   @RequestParam(required = false) String assetNumber,
+                                   @RequestParam(required = false) DeviceType deviceType,
+                                   @RequestParam(required = false) DeviceStatus status,
+                                   @RequestParam(required = false) String assignedUsername,
+                                   @RequestParam(required = false) String building,
+                                   @RequestParam(defaultValue = "0") int page,
+                                   @RequestParam(defaultValue = "10") int size) {
         String username = authentication.getName();
 
-        List<DeviceResponse> devices = deviceService.getAllDevices();
+        Page<DeviceResponse> devicePage = deviceService.searchDevicesPage(
+                assetNumber,
+                deviceType,
+                status,
+                assignedUsername,
+                building,
+                page,
+                size
+        );
+
         List<UserResponse> users = userService.getAllUsers().stream()
                 .filter(user -> user.isEnabled())
                 .toList();
 
         model.addAttribute("username", username);
-        model.addAttribute("devices", devices);
+        model.addAttribute("devices", devicePage.getContent());
         model.addAttribute("users", users);
         model.addAttribute("deviceForm", new CreateDeviceRequest());
         model.addAttribute("deviceTypes", DeviceType.values());
         model.addAttribute("deviceStatuses", DeviceStatus.values());
+
+        model.addAttribute("currentPage", devicePage.getNumber());
+        model.addAttribute("totalPages", devicePage.getTotalPages());
+        model.addAttribute("totalItems", devicePage.getTotalElements());
+        model.addAttribute("pageSize", size);
+        model.addAttribute("hasPrevious", devicePage.hasPrevious());
+        model.addAttribute("hasNext", devicePage.hasNext());
+
+        model.addAttribute("selectedAssetNumber", assetNumber);
+        model.addAttribute("selectedDeviceType", deviceType);
+        model.addAttribute("selectedStatus", status);
+        model.addAttribute("selectedAssignedUsername", assignedUsername);
+        model.addAttribute("selectedBuilding", building);
 
         return "admin-devices";
     }

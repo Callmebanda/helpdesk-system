@@ -22,6 +22,78 @@
     <main class="content">
         <div th:replace="~{fragments/alerts :: alerts}"></div>
 
+        <div class="card">
+            <h2>Search and Filter Devices</h2>
+
+            <form th:action="@{/admin/devices}" method="get" class="filter-grid">
+                <div>
+                    <label for="assetNumber">Asset Number</label>
+                    <input id="assetNumber"
+                           name="assetNumber"
+                           type="text"
+                           placeholder="e.g. MOF-PC-001"
+                           th:value="${selectedAssetNumber}">
+                </div>
+
+                <div>
+                    <label for="deviceType">Device Type</label>
+                    <select id="deviceType" name="deviceType">
+                        <option value="">All</option>
+                        <option th:each="device : ${deviceTypes}"
+                                th:value="${device}"
+                                th:text="${device}"
+                                th:selected="${selectedDeviceType == device}">
+                        </option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="status">Status</label>
+                    <select id="status" name="status">
+                        <option value="">All</option>
+                        <option th:each="statusValue : ${deviceStatuses}"
+                                th:value="${statusValue}"
+                                th:text="${statusValue}"
+                                th:selected="${selectedStatus == statusValue}">
+                        </option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="assignedUsername">Assigned Username</label>
+                    <input id="assignedUsername"
+                           name="assignedUsername"
+                           type="text"
+                           placeholder="e.g. user001"
+                           th:value="${selectedAssignedUsername}">
+                </div>
+
+                <div>
+                    <label for="building">Building</label>
+                    <input id="building"
+                           name="building"
+                           type="text"
+                           placeholder="e.g. Building 1"
+                           th:value="${selectedBuilding}">
+                </div>
+
+                <div>
+                    <label for="size">Page Size</label>
+                    <select id="size" name="size">
+                        <option value="10" th:selected="${pageSize == 10}">10</option>
+                        <option value="20" th:selected="${pageSize == 20}">20</option>
+                        <option value="50" th:selected="${pageSize == 50}">50</option>
+                    </select>
+                </div>
+
+                <div class="filter-actions">
+                    <button type="submit">Apply Filters</button>
+                    <a href="/admin/devices" class="secondary-link-btn">Clear</a>
+                </div>
+            </form>
+        </div>
+
+
         <div class="action-grid">
             <div class="card">
                 <h2>Add Device</h2>
@@ -126,6 +198,37 @@
                 </tr>
                 </tbody>
             </table>
+            <div class="pagination-bar" th:if="${totalPages > 1}">
+                <a th:if="${hasPrevious}"
+                   th:href="@{/admin/devices(
+            page=${currentPage - 1},
+            size=${pageSize},
+            assetNumber=${selectedAssetNumber},
+            deviceType=${selectedDeviceType},
+            status=${selectedStatus},
+            assignedUsername=${selectedAssignedUsername},
+            building=${selectedBuilding}
+       )}"
+                   class="secondary-link-btn">Previous</a>
+
+                <span th:text="'Page ' + (${currentPage} + 1) + ' of ' + ${totalPages}"></span>
+
+                <a th:if="${hasNext}"
+                   th:href="@{/admin/devices(
+            page=${currentPage + 1},
+            size=${pageSize},
+            assetNumber=${selectedAssetNumber},
+            deviceType=${selectedDeviceType},
+            status=${selectedStatus},
+            assignedUsername=${selectedAssignedUsername},
+            building=${selectedBuilding}
+       )}"
+                   class="secondary-link-btn">Next</a>
+            </div>
+
+            <div class="pagination-info">
+                <span th:text="'Total matching devices: ' + ${totalItems}"></span>
+            </div>
         </div>
     </main>
 </div>

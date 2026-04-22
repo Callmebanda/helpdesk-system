@@ -11,6 +11,17 @@ import helpdesk.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import helpdesk.model.DeviceType;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
+import jakarta.persistence.criteria.Predicate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+
+import java.util.ArrayList;
 
 import java.util.List;
 
@@ -76,6 +87,65 @@ public class DeviceService {
 
         Device savedDevice = deviceRepository.save(device);
         return mapToResponse(savedDevice);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<DeviceResponse> searchDevicesPage(String assetNumber,
+                                                  DeviceType deviceType,
+                                                  DeviceStatus status,
+                                                  String assignedUsername,
+                                                  String building,
+                                                  int page,
+                                                  int size) {
+
+        int safePage = Math.max(page, 0);
+        int safeSize = size < 1 ? 10 : Math.min(size, 50);
+
+        Pageable pageable = PageRequest.of(
+                safePage,
+                safeSize,
+                Sort.by(Sort.Direction.ASC, "assetNumber")
+        );
+
+        Specification<Device> specification = (root, query, criteriaBuilder) -> {
+            ArrayList<Predicate> predicates = new ArrayList<>();
+
+            if (assetNumber != null && !assetNumber.isBlank()) {
+                predicates.add(criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("assetNumber")),
+                        "%" + assetNumber.trim().toLowerCase() + "%"
+                ));
+            }
+
+            if (deviceType != null) {
+                predicates.add(criteriaBuilder.equal(root.get("deviceType"), deviceType));
+            }
+
+            if (status != null) {
+                predicates.add(criteriaBuilder.equal(root.get("status"), status));
+            }
+
+            if (assignedUsername != null && !assignedUsername.isBlank()) {
+                Join<Device, User> userJoin = root.join("assignedUser", JoinType.LEFT);
+
+                predicates.add(criteriaBuilder.equal(
+                        criteriaBuilder.lower(userJoin.get("username")),
+                        assignedUsername.trim().toLowerCase()
+                ));
+            }
+
+            if (building != null && !building.isBlank()) {
+                predicates.add(criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("building")),
+                        "%" + building.trim().toLowerCase() + "%"
+                ));
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return deviceRepository.findAll(specification, pageable)
+                .map(this::mapToResponse);
     }
 
     private DeviceResponse mapToResponse(Device device) {
