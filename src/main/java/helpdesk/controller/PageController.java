@@ -495,18 +495,39 @@ public class PageController {
     public String adminKnowledgePage(Authentication authentication,
                                      Model model,
                                      @RequestParam(required = false) DeviceType deviceType,
-                                     @RequestParam(required = false) IssueCategory issueCategory) {
+                                     @RequestParam(required = false) IssueCategory issueCategory,
+                                     @RequestParam(required = false) String title,
+                                     @RequestParam(required = false) String publishedBy,
+                                     @RequestParam(defaultValue = "0") int page,
+                                     @RequestParam(defaultValue = "10") int size) {
         String username = authentication.getName();
-        List<KnowledgeArticleResponse> articles = knowledgeBaseService.getArticles(deviceType, issueCategory);
+
+        Page<KnowledgeArticleResponse> articlePage = knowledgeBaseService.searchArticlesPage(
+                deviceType,
+                issueCategory,
+                title,
+                publishedBy,
+                page,
+                size
+        );
 
         model.addAttribute("username", username);
-        model.addAttribute("articles", articles);
+        model.addAttribute("articles", articlePage.getContent());
 
         model.addAttribute("deviceTypes", DeviceType.values());
         model.addAttribute("issueCategories", IssueCategory.values());
 
+        model.addAttribute("currentPage", articlePage.getNumber());
+        model.addAttribute("totalPages", articlePage.getTotalPages());
+        model.addAttribute("totalItems", articlePage.getTotalElements());
+        model.addAttribute("pageSize", size);
+        model.addAttribute("hasPrevious", articlePage.hasPrevious());
+        model.addAttribute("hasNext", articlePage.hasNext());
+
         model.addAttribute("selectedDeviceType", deviceType);
         model.addAttribute("selectedIssueCategory", issueCategory);
+        model.addAttribute("selectedTitle", title);
+        model.addAttribute("selectedPublishedBy", publishedBy);
 
         return "admin-knowledge";
     }

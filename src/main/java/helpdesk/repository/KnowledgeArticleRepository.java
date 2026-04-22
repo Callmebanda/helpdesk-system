@@ -4,10 +4,11 @@ import helpdesk.model.DeviceType;
 import helpdesk.model.IssueCategory;
 import helpdesk.model.KnowledgeArticle;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.List;
 
-public interface KnowledgeArticleRepository extends JpaRepository<KnowledgeArticle, Long> {
+public interface KnowledgeArticleRepository extends JpaRepository<KnowledgeArticle, Long>, JpaSpecificationExecutor<KnowledgeArticle> {
 
     boolean existsBySourceTicketId(Long sourceTicketId);
 

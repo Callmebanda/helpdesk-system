@@ -20,6 +20,8 @@
     </header>
 
     <main class="content">
+        <div th:replace="~{fragments/alerts :: alerts}"></div>
+
         <div class="card">
             <h2>Filter Articles</h2>
 
@@ -45,6 +47,33 @@
                                 th:text="${issue}"
                                 th:selected="${selectedIssueCategory == issue}">
                         </option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="title">Title</label>
+                    <input id="title"
+                           name="title"
+                           type="text"
+                           placeholder="Search article title"
+                           th:value="${selectedTitle}">
+                </div>
+
+                <div>
+                    <label for="publishedBy">Published By</label>
+                    <input id="publishedBy"
+                           name="publishedBy"
+                           type="text"
+                           placeholder="e.g. supervisor1"
+                           th:value="${selectedPublishedBy}">
+                </div>
+
+                <div>
+                    <label for="size">Page Size</label>
+                    <select id="size" name="size">
+                        <option value="10" th:selected="${pageSize == 10}">10</option>
+                        <option value="20" th:selected="${pageSize == 20}">20</option>
+                        <option value="50" th:selected="${pageSize == 50}">50</option>
                     </select>
                 </div>
 
@@ -89,6 +118,36 @@
                 </tr>
                 </tbody>
             </table>
+
+            <div class="pagination-bar" th:if="${totalPages > 1}">
+                <a th:if="${hasPrevious}"
+                   th:href="@{/admin/knowledge(
+                        page=${currentPage - 1},
+                        size=${pageSize},
+                        deviceType=${selectedDeviceType},
+                        issueCategory=${selectedIssueCategory},
+                        title=${selectedTitle},
+                        publishedBy=${selectedPublishedBy}
+                   )}"
+                   class="secondary-link-btn">Previous</a>
+
+                <span th:text="'Page ' + (${currentPage} + 1) + ' of ' + ${totalPages}"></span>
+
+                <a th:if="${hasNext}"
+                   th:href="@{/admin/knowledge(
+                        page=${currentPage + 1},
+                        size=${pageSize},
+                        deviceType=${selectedDeviceType},
+                        issueCategory=${selectedIssueCategory},
+                        title=${selectedTitle},
+                        publishedBy=${selectedPublishedBy}
+                   )}"
+                   class="secondary-link-btn">Next</a>
+            </div>
+
+            <div class="pagination-info">
+                <span th:text="'Total matching articles: ' + ${totalItems}"></span>
+            </div>
         </div>
     </main>
 </div>

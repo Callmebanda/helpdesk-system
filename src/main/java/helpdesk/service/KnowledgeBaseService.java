@@ -12,6 +12,14 @@ import helpdesk.repository.TicketRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.criteria.Predicate;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+
+import java.util.ArrayList;
 
 import java.util.List;
 
@@ -90,6 +98,55 @@ public class KnowledgeBaseService {
                 .orElseThrow(() -> new RuntimeException("Knowledge article not found"));
 
         return mapToResponse(article);
+    }
+
+    @Transactional(readOnly = true)
+    public Page<KnowledgeArticleResponse> searchArticlesPage(DeviceType deviceType,
+                                                             IssueCategory issueCategory,
+                                                             String title,
+                                                             String publishedBy,
+                                                             int page,
+                                                             int size) {
+
+        int safePage = Math.max(page, 0);
+        int safeSize = size < 1 ? 10 : Math.min(size, 50);
+
+        Pageable pageable = PageRequest.of(
+                safePage,
+                safeSize,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        Specification<KnowledgeArticle> specification = (root, query, criteriaBuilder) -> {
+            ArrayList<Predicate> predicates = new ArrayList<>();
+
+            if (deviceType != null) {
+                predicates.add(criteriaBuilder.equal(root.get("deviceType"), deviceType));
+            }
+
+            if (issueCategory != null) {
+                predicates.add(criteriaBuilder.equal(root.get("issueCategory"), issueCategory));
+            }
+
+            if (title != null && !title.isBlank()) {
+                predicates.add(criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("title")),
+                        "%" + title.trim().toLowerCase() + "%"
+                ));
+            }
+
+            if (publishedBy != null && !publishedBy.isBlank()) {
+                predicates.add(criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("publishedBy")),
+                        "%" + publishedBy.trim().toLowerCase() + "%"
+                ));
+            }
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return knowledgeArticleRepository.findAll(specification, pageable)
+                .map(this::mapToResponse);
     }
 
     private String buildSymptoms(Ticket ticket) {
