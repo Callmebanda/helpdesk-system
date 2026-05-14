@@ -110,7 +110,7 @@ public class UserService {
         userRepository.save(user);
     }
 
-    public Page<UserResponse> searchUsersPage(String username,
+    public Page<UserResponse> searchUsersPage(String searchTerm,
                                               Role role,
                                               String department,
                                               Boolean enabled,
@@ -129,11 +129,25 @@ public class UserService {
         Specification<User> specification = (root, query, criteriaBuilder) -> {
             ArrayList<Predicate> predicates = new ArrayList<>();
 
-            if (username != null && !username.isBlank()) {
-                predicates.add(criteriaBuilder.like(
+            if (searchTerm != null && !searchTerm.isBlank()) {
+                String likeValue = "%" + searchTerm.trim().toLowerCase() + "%";
+
+                Predicate usernameMatch = criteriaBuilder.like(
                         criteriaBuilder.lower(root.get("username")),
-                        "%" + username.trim().toLowerCase() + "%"
-                ));
+                        likeValue
+                );
+
+                Predicate firstNameMatch = criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("firstName")),
+                        likeValue
+                );
+
+                Predicate lastNameMatch = criteriaBuilder.like(
+                        criteriaBuilder.lower(root.get("lastName")),
+                        likeValue
+                );
+
+                predicates.add(criteriaBuilder.or(usernameMatch, firstNameMatch, lastNameMatch));
             }
 
             if (role != null) {

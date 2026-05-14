@@ -30,12 +30,12 @@
 
             <form th:action="@{/admin/users}" method="get" class="filter-grid">
                 <div>
-                    <label for="usernameFilter">Username</label>
-                    <input id="usernameFilter"
-                           name="usernameFilter"
+                    <label for="searchTerm">Search User</label>
+                    <input id="searchTerm"
+                           name="searchTerm"
                            type="text"
-                           placeholder="e.g. user001"
-                           th:value="${selectedUsernameFilter}">
+                           placeholder="Username, first name, or last name"
+                           th:value="${selectedSearchTerm}">
                 </div>
 
                 <div>
@@ -85,28 +85,27 @@
         </div>
 
         <div class="pagination-bar" th:if="${totalPages > 1}">
-            <a th:if="${hasPrevious}"
-               th:href="@{/admin/users(
+            <a th:href="@{/admin/users(
             page=${currentPage - 1},
             size=${pageSize},
-            usernameFilter=${selectedUsernameFilter},
+            searchTerm=${selectedSearchTerm},
             role=${selectedRole},
             department=${selectedDepartment},
             enabled=${selectedEnabled}
-       )}"
+            )}"
                class="secondary-link-btn">Previous</a>
 
             <span th:text="'Page ' + (${currentPage} + 1) + ' of ' + ${totalPages}"></span>
 
             <a th:if="${hasNext}"
                th:href="@{/admin/users(
-            page=${currentPage + 1},
-            size=${pageSize},
-            usernameFilter=${selectedUsernameFilter},
-            role=${selectedRole},
-            department=${selectedDepartment},
-            enabled=${selectedEnabled}
-       )}"
+     page=${currentPage + 1},
+     size=${pageSize},
+     searchTerm=${selectedSearchTerm},
+     role=${selectedRole},
+     department=${selectedDepartment},
+     enabled=${selectedEnabled}
+)}"
                class="secondary-link-btn">Next</a>
         </div>
 
@@ -180,8 +179,9 @@
         </div>
 
         <div class="card">
-            <h2>All Users</h2>
-
+            <div class="section-header">
+                <h2>All Users</h2>
+            </div>
             <table>
                 <thead>
                 <tr>

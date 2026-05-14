@@ -177,7 +177,7 @@ public class PageController {
     @GetMapping("/admin/users")
     public String adminUsersPage(Authentication authentication,
                                  Model model,
-                                 @RequestParam(required = false) String usernameFilter,
+                                 @RequestParam(required = false) String searchTerm,
                                  @RequestParam(required = false) Role role,
                                  @RequestParam(required = false) String department,
                                  @RequestParam(required = false) Boolean enabled,
@@ -187,7 +187,7 @@ public class PageController {
         String username = authentication.getName();
 
         Page<UserResponse> userPage = userService.searchUsersPage(
-                usernameFilter,
+                searchTerm,
                 role,
                 department,
                 enabled,
@@ -207,7 +207,7 @@ public class PageController {
         model.addAttribute("hasPrevious", userPage.hasPrevious());
         model.addAttribute("hasNext", userPage.hasNext());
 
-        model.addAttribute("selectedUsernameFilter", usernameFilter);
+        model.addAttribute("selectedSearchTerm", searchTerm);
         model.addAttribute("selectedRole", role);
         model.addAttribute("selectedDepartment", department);
         model.addAttribute("selectedEnabled", enabled);
