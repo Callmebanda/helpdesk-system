@@ -32,7 +32,13 @@
                 <div><strong>Issue Category:</strong> <span th:text="${ticket.issueCategory}"></span></div>
                 <div><strong>Asset Number:</strong> <span th:text="${ticket.assetNumber}"></span></div>
                 <div><strong>Status:</strong> <span th:text="${ticket.status}"></span></div>
-                <div><strong>Priority:</strong> <span th:text="${ticket.priority}"></span></div>
+                <div>
+                    <strong>Priority:</strong>
+                    <span class="badge"
+                          th:classappend="'priority-' + ${#strings.toLowerCase(ticket.priority.name())}"
+                          th:text="${ticket.priority}">
+    </span>
+                </div>
                 <div><strong>Assigned Technician:</strong> <span th:text="${ticket.assignedTechnicianUsername}"></span></div>
                 <div><strong>Created At:</strong> <span th:text="${ticket.createdAt}"></span></div>
                 <div><strong>Due At:</strong> <span th:text="${ticket.dueAt}"></span></div>
