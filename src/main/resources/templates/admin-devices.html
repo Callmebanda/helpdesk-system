@@ -220,8 +220,15 @@
                     <td th:text="${device.assignedUsername} ?: 'Not assigned'"></td>
                     <td th:text="${device.status}"></td>
                     <td>
-                        <a th:href="@{'/admin/devices/' + ${device.id} + '/assign'}"
-                           class="table-link-btn">Assign</a>
+                        <div class="inline-actions">
+                            <a th:href="@{'/admin/devices/' + ${device.id} + '/assign'}" class="table-link-btn">Assign</a>
+
+                            <form th:if="${device.assignedUsername != null}"
+                                  th:action="@{'/admin/devices/' + ${device.id} + '/unassign'}"
+                                  method="post">
+                                <button type="submit" class="danger-btn">De-Assign</button>
+                            </form>
+                        </div>
                     </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(devices)}">

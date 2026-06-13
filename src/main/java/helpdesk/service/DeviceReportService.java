@@ -50,9 +50,9 @@ public class DeviceReportService {
                     .orElseThrow(() -> new RuntimeException("Device not found"));
         }
 
-        String assetNumber = request.getAssetNumber();
+        String assetNumber = null;
 
-        if ((assetNumber == null || assetNumber.isBlank()) && device != null) {
+        if (device != null) {
             assetNumber = device.getAssetNumber();
         }
 

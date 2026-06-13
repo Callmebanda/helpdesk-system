@@ -265,6 +265,17 @@ select, textarea {
     background: #991b1b;
 }
 
+.inline-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.inline-actions form {
+    margin: 0;
+}
+
 .inline-form {
     display: flex;
     gap: 8px;

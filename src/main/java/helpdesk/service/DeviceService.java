@@ -92,6 +92,18 @@ public class DeviceService {
         return mapToResponse(savedDevice);
     }
 
+    @Transactional
+    public DeviceResponse unassignDevice(Long deviceId) {
+        Device device = deviceRepository.findById(deviceId)
+                .orElseThrow(() -> new RuntimeException("Device not found"));
+
+        device.setAssignedUser(null);
+        device.setStatus(DeviceStatus.IN_STORE);
+
+        Device savedDevice = deviceRepository.save(device);
+        return mapToResponse(savedDevice);
+    }
+
     @Transactional(readOnly = true)
     public Page<DeviceResponse> searchDevicesPage(String assetNumber,
                                                   DeviceType deviceType,

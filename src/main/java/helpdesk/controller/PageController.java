@@ -795,6 +795,19 @@ public class PageController {
         return "redirect:/admin/devices/" + id + "/assign";
     }
 
+    @PostMapping("/admin/devices/{id}/unassign")
+    public String unassignDeviceFromPage(@PathVariable Long id,
+                                         RedirectAttributes redirectAttributes) {
+        try {
+            deviceService.unassignDevice(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Device de-assigned successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
+        return "redirect:/admin/devices";
+    }
+
     @GetMapping("/user/devices")
     public String userDevicesPage(Authentication authentication, Model model) {
         String username = authentication.getName();
