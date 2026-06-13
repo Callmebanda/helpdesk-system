@@ -19,6 +19,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import helpdesk.service.NotificationService;
 
+import java.time.Duration;
+import java.time.LocalDate;
+import java.util.Map;
+import java.util.Comparator;
+import java.util.stream.Collectors;
+
 import java.util.ArrayList;
 
 import java.time.LocalDateTime;
@@ -900,5 +906,149 @@ public class TicketService {
         return ticket.getCreatedAt() != null
                 && ticket.getStatus() == TicketStatus.PENDING
                 && ticket.getCreatedAt().isBefore(LocalDateTime.now().minusHours(1));
+    }
+
+    private LocalDateTime startOfDay(LocalDate date) {
+        return date.atStartOfDay();
+    }
+
+    private LocalDateTime endExclusive(LocalDate date) {
+        return date.plusDays(1).atStartOfDay();
+    }
+
+    private Double calculateAverageResolutionHoursFromCreated(List<Ticket> tickets) {
+        List<Double> values = tickets.stream()
+                .filter(ticket -> ticket.getResolvedAt() != null)
+                .filter(ticket -> ticket.getCreatedAt() != null)
+                .map(ticket -> Duration.between(ticket.getCreatedAt(), ticket.getResolvedAt()).toMinutes() / 60.0)
+                .toList();
+
+        if (values.isEmpty()) {
+            return null;
+        }
+
+        return values.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+    }
+
+    private Double calculateAverageResolutionHoursFromAssigned(List<Ticket> tickets) {
+        List<Double> values = tickets.stream()
+                .filter(ticket -> ticket.getResolvedAt() != null)
+                .filter(ticket -> ticket.getAssignedAt() != null)
+                .map(ticket -> Duration.between(ticket.getAssignedAt(), ticket.getResolvedAt()).toMinutes() / 60.0)
+                .toList();
+
+        if (values.isEmpty()) {
+            return null;
+        }
+
+        return values.stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
+    }
+
+    @Transactional(readOnly = true)
+    public TechPerformanceReportResponse getTechnicianPerformanceReport(String technicianUsername,
+                                                                        LocalDate dateFrom,
+                                                                        LocalDate dateTo) {
+        User technician = userRepository.findByUsername(technicianUsername)
+                .orElseThrow(() -> new RuntimeException("Technician not found"));
+
+        Specification<Ticket> specification = (root, query, criteriaBuilder) -> criteriaBuilder.and(
+                criteriaBuilder.equal(root.get("assignedTechnician"), technician),
+                criteriaBuilder.isNotNull(root.get("assignedAt")),
+                criteriaBuilder.greaterThanOrEqualTo(root.get("assignedAt"), startOfDay(dateFrom)),
+                criteriaBuilder.lessThan(root.get("assignedAt"), endExclusive(dateTo))
+        );
+
+        List<Ticket> tickets = ticketRepository.findAll(
+                specification,
+                Sort.by(Sort.Direction.DESC, "assignedAt")
+        );
+
+        long pending = tickets.stream().filter(t -> t.getStatus() == TicketStatus.PENDING).count();
+        long inProgress = tickets.stream().filter(t -> t.getStatus() == TicketStatus.IN_PROGRESS).count();
+        long resolved = tickets.stream().filter(t -> t.getStatus() == TicketStatus.RESOLVED).count();
+        long escalated = tickets.stream().filter(t -> t.getStatus() == TicketStatus.ESCALATED).count();
+        long overdue = tickets.stream().filter(this::isOverdue).count();
+
+        return TechPerformanceReportResponse.builder()
+                .technicianUsername(technicianUsername)
+                .dateFrom(dateFrom)
+                .dateTo(dateTo)
+                .totalAssigned(tickets.size())
+                .pending(pending)
+                .inProgress(inProgress)
+                .resolved(resolved)
+                .escalated(escalated)
+                .overdue(overdue)
+                .averageResolutionHours(calculateAverageResolutionHoursFromAssigned(tickets))
+                .tickets(tickets.stream().map(this::mapToAdminResponse).toList())
+                .build();
+    }
+
+    @Transactional(readOnly = true)
+    public SupervisorPerformanceReportResponse getSupervisorPerformanceReport(LocalDate dateFrom,
+                                                                              LocalDate dateTo) {
+        Specification<Ticket> specification = (root, query, criteriaBuilder) -> criteriaBuilder.and(
+                criteriaBuilder.greaterThanOrEqualTo(root.get("createdAt"), startOfDay(dateFrom)),
+                criteriaBuilder.lessThan(root.get("createdAt"), endExclusive(dateTo))
+        );
+
+        List<Ticket> tickets = ticketRepository.findAll(
+                specification,
+                Sort.by(Sort.Direction.DESC, "createdAt")
+        );
+
+        long assignedTickets = tickets.stream().filter(ticket -> ticket.getAssignedTechnician() != null).count();
+        long unassignedTickets = tickets.stream().filter(ticket -> ticket.getAssignedTechnician() == null).count();
+        long pendingTickets = tickets.stream().filter(ticket -> ticket.getStatus() == TicketStatus.PENDING).count();
+        long inProgressTickets = tickets.stream().filter(ticket -> ticket.getStatus() == TicketStatus.IN_PROGRESS).count();
+        long resolvedTickets = tickets.stream().filter(ticket -> ticket.getStatus() == TicketStatus.RESOLVED).count();
+        long escalatedTickets = tickets.stream().filter(ticket -> ticket.getStatus() == TicketStatus.ESCALATED).count();
+        long overdueTickets = tickets.stream().filter(this::isOverdue).count();
+
+        Map<String, List<Ticket>> groupedByTechnician = tickets.stream()
+                .filter(ticket -> ticket.getAssignedTechnician() != null)
+                .collect(Collectors.groupingBy(ticket -> ticket.getAssignedTechnician().getUsername()));
+
+        List<SupervisorTechnicianPerformanceRowResponse> technicianRows = groupedByTechnician.entrySet().stream()
+                .map(entry -> {
+                    List<Ticket> techTickets = entry.getValue();
+                    User technician = techTickets.get(0).getAssignedTechnician();
+
+                    long pending = techTickets.stream().filter(t -> t.getStatus() == TicketStatus.PENDING).count();
+                    long inProgress = techTickets.stream().filter(t -> t.getStatus() == TicketStatus.IN_PROGRESS).count();
+                    long resolved = techTickets.stream().filter(t -> t.getStatus() == TicketStatus.RESOLVED).count();
+                    long escalated = techTickets.stream().filter(t -> t.getStatus() == TicketStatus.ESCALATED).count();
+                    long overdue = techTickets.stream().filter(this::isOverdue).count();
+
+                    return SupervisorTechnicianPerformanceRowResponse.builder()
+                            .technicianUsername(technician.getUsername())
+                            .technicianName(technician.getFirstName() + " " + technician.getLastName())
+                            .totalAssigned(techTickets.size())
+                            .pending(pending)
+                            .inProgress(inProgress)
+                            .resolved(resolved)
+                            .escalated(escalated)
+                            .overdue(overdue)
+                            .averageResolutionHours(calculateAverageResolutionHoursFromAssigned(techTickets))
+                            .build();
+                })
+                .sorted(Comparator.comparingLong(SupervisorTechnicianPerformanceRowResponse::getTotalAssigned).reversed())
+                .toList();
+
+        return SupervisorPerformanceReportResponse.builder()
+                .dateFrom(dateFrom)
+                .dateTo(dateTo)
+                .totalTickets(tickets.size())
+                .assignedTickets(assignedTickets)
+                .unassignedTickets(unassignedTickets)
+                .pendingTickets(pendingTickets)
+                .inProgressTickets(inProgressTickets)
+                .resolvedTickets(resolvedTickets)
+                .escalatedTickets(escalatedTickets)
+                .overdueTickets(overdueTickets)
+                .averageResolutionHours(calculateAverageResolutionHoursFromCreated(tickets))
+                .technicianRows(technicianRows)
+                .tickets(tickets.stream().map(this::mapToAdminResponse).toList())
+                .build();
     }
 }

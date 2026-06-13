@@ -11,12 +11,13 @@
         <h1>Admin Dashboard</h1>
         <div>
             <span th:text="'Signed in as: ' + ${username}"></span>
+            <a th:href="@{/admin/reports/performance}" class="logout-btn">Performance Report</a>
             <span class="notif-pill" th:text="'Unread: ' + ${unreadNotificationCount}"></span>
-            <a href="/admin/users" class="logout-btn">Users</a>
-            <a href="/admin/devices" class="logout-btn">Devices</a>
-            <a href="/admin/device-reports" class="logout-btn">Device Reports</a>
-            <a href="/admin/knowledge" class="logout-btn">Knowledge Base</a>
-            <a href="/logout" class="logout-btn">Logout</a>
+            <a th:href="@{/admin/users}" class="logout-btn">Users</a>
+            <a th:href="@{/admin/devices}" class="logout-btn">Devices</a>
+            <a th:href="@{/admin/device-reports}" class="logout-btn">Device Reports</a>
+            <a th:href="@{/admin/knowledge}" class="logout-btn">Knowledge Base</a>
+            <a th:href="@{/logout}" class="logout-btn">Logout</a>
         </div>
     </header>
 

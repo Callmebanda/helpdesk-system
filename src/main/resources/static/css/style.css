@@ -446,3 +446,46 @@ small {
     color: #555;
     font-size: 12px;
 }
+
+.print-hide {
+    display: block;
+}
+
+@media print {
+    @page {
+        size: A4;
+        margin: 12mm;
+    }
+
+    body {
+        background: #ffffff !important;
+    }
+
+    .topbar,
+    .print-hide,
+    .notification-item,
+    .notif-pill {
+        display: none !important;
+    }
+
+    .layout,
+    .content {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .card {
+        box-shadow: none !important;
+        border: 1px solid #d1d5db;
+        page-break-inside: avoid;
+    }
+
+    a {
+        color: inherit !important;
+        text-decoration: none !important;
+    }
+
+    button {
+        display: none !important;
+    }
+}

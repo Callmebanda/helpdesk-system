@@ -37,6 +37,9 @@ import helpdesk.service.DeviceReportService;
 import org.springframework.data.domain.Page;
 import helpdesk.dto.NotificationResponse;
 import helpdesk.service.NotificationService;
+import org.springframework.format.annotation.DateTimeFormat;
+
+import java.time.LocalDate;
 
 import java.util.List;
 
@@ -1050,5 +1053,68 @@ public class PageController {
         }
 
         return "redirect:/user/dashboard";
+    }
+
+    private LocalDate resolveDateFrom(LocalDate dateFrom) {
+        return dateFrom != null ? dateFrom : LocalDate.now().withDayOfMonth(1);
+    }
+
+    private LocalDate resolveDateTo(LocalDate dateTo) {
+        return dateTo != null ? dateTo : LocalDate.now();
+    }
+
+    @GetMapping("/tech/reports/performance")
+    public String techPerformanceReportPage(Authentication authentication,
+                                            Model model,
+                                            @RequestParam(required = false)
+                                            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                                            LocalDate dateFrom,
+                                            @RequestParam(required = false)
+                                            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                                            LocalDate dateTo) {
+
+        String username = authentication.getName();
+        LocalDate resolvedFrom = resolveDateFrom(dateFrom);
+        LocalDate resolvedTo = resolveDateTo(dateTo);
+
+        TechPerformanceReportResponse report = ticketService.getTechnicianPerformanceReport(
+                username,
+                resolvedFrom,
+                resolvedTo
+        );
+
+        model.addAttribute("username", username);
+        model.addAttribute("report", report);
+        model.addAttribute("dateFrom", resolvedFrom);
+        model.addAttribute("dateTo", resolvedTo);
+
+        return "tech-performance-report";
+    }
+
+    @GetMapping("/admin/reports/performance")
+    public String adminPerformanceReportPage(Authentication authentication,
+                                             Model model,
+                                             @RequestParam(required = false)
+                                             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                                             LocalDate dateFrom,
+                                             @RequestParam(required = false)
+                                             @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+                                             LocalDate dateTo) {
+
+        String username = authentication.getName();
+        LocalDate resolvedFrom = resolveDateFrom(dateFrom);
+        LocalDate resolvedTo = resolveDateTo(dateTo);
+
+        SupervisorPerformanceReportResponse report = ticketService.getSupervisorPerformanceReport(
+                resolvedFrom,
+                resolvedTo
+        );
+
+        model.addAttribute("username", username);
+        model.addAttribute("report", report);
+        model.addAttribute("dateFrom", resolvedFrom);
+        model.addAttribute("dateTo", resolvedTo);
+
+        return "admin-performance-report";
     }
 }
