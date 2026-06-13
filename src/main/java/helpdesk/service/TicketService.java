@@ -320,6 +320,9 @@ public class TicketService {
         long overdue = tickets.stream()
                 .filter(this::isOverdue)
                 .count();
+        long escalated = tickets.stream()
+                .filter(ticket -> ticket.getStatus() == TicketStatus.ESCALATED)
+                .count();
 
         return TechTicketSummaryResponse.builder()
                 .totalAssigned(totalAssigned)
@@ -327,6 +330,7 @@ public class TicketService {
                 .inProgress(inProgress)
                 .resolved(resolved)
                 .overdue(overdue)
+                .escalated(escalated)
                 .build();
     }
 
@@ -350,6 +354,9 @@ public class TicketService {
         long overdueTickets = tickets.stream()
                 .filter(this::isOverdue)
                 .count();
+        long escalatedTickets = tickets.stream()
+                .filter(ticket -> ticket.getStatus() == TicketStatus.ESCALATED)
+                .count();
 
         return UserTicketSummaryResponse.builder()
                 .totalTickets(totalTickets)
@@ -357,6 +364,7 @@ public class TicketService {
                 .inProgressTickets(inProgressTickets)
                 .resolvedTickets(resolvedTickets)
                 .overdueTickets(overdueTickets)
+                .escalatedTickets(escalatedTickets)
                 .build();
     }
 
@@ -447,6 +455,9 @@ public class TicketService {
         long overdueTickets = tickets.stream()
                 .filter(this::isOverdue)
                 .count();
+        long escalatedTickets = tickets.stream()
+                .filter(ticket -> ticket.getStatus() == TicketStatus.ESCALATED)
+                .count();
 
         return AdminTicketSummaryResponse.builder()
                 .totalTickets(totalTickets)
@@ -456,6 +467,7 @@ public class TicketService {
                 .assignedTickets(assignedTickets)
                 .unassignedTickets(unassignedTickets)
                 .overdueTickets(overdueTickets)
+                .escalatedTickets(escalatedTickets)
                 .build();
     }
 
@@ -767,6 +779,7 @@ public class TicketService {
                 .dueAt(ticket.getDueAt())
                 .overdue(isOverdue(ticket))
                 .createdByUsername(ticket.getCreatedByUsername())
+                .needsAttention(needsAttention(ticket))
                 .build();
     }
 
@@ -804,6 +817,13 @@ public class TicketService {
                 .dueAt(ticket.getDueAt())
                 .overdue(isOverdue(ticket))
                 .createdByUsername(ticket.getCreatedByUsername())
+                .needsAttention(needsAttention(ticket))
                 .build();
+    }
+
+    private boolean needsAttention(Ticket ticket) {
+        return ticket.getCreatedAt() != null
+                && ticket.getStatus() == TicketStatus.PENDING
+                && ticket.getCreatedAt().isBefore(LocalDateTime.now().minusHours(1));
     }
 }

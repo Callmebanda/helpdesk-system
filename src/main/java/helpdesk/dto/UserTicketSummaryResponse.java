@@ -12,4 +12,5 @@ public class UserTicketSummaryResponse {
     private long inProgressTickets;
     private long resolvedTickets;
     private long overdueTickets;
+    private long escalatedTickets;
 }

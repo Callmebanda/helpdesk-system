@@ -14,4 +14,5 @@ public class AdminTicketSummaryResponse {
     private long assignedTickets;
     private long unassignedTickets;
     private long overdueTickets;
+    private long escalatedTickets;
 }

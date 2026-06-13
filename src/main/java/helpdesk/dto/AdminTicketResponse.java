@@ -48,4 +48,5 @@ public class AdminTicketResponse {
     private boolean overdue;
 
     private String createdByUsername;
+    private boolean needsAttention;
 }

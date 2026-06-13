@@ -38,4 +38,5 @@ public class TicketResponse {
     private LocalDateTime dueAt;
     private boolean overdue;
     private String createdByUsername;
+    private boolean needsAttention;
 }

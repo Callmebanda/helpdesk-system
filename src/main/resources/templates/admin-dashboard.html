@@ -49,6 +49,10 @@
                 <h3>Overdue</h3>
                 <p th:text="${summary.overdueTickets}"></p>
             </div>
+            <div class="card summary-card">
+                <h3>Escalated</h3>
+                <p th:text="${summary.escalatedTickets}"></p>
+            </div>
         </div>
 
         <div class="card">
@@ -183,7 +187,12 @@
                     <td th:text="${ticket.department}"></td>
                     <td th:text="${ticket.deviceType}"></td>
                     <td th:text="${ticket.problemTitle}"></td>
-                    <td th:text="${ticket.status}"></td>
+                    <td>
+    <span class="badge"
+          th:classappend="' status-' + ${#strings.toLowerCase(ticket.status.name())}"
+          th:text="${ticket.status}">
+    </span>
+                    </td>
                     <td>
     <span class="badge"
           th:classappend="'priority-' + ${#strings.toLowerCase(ticket.priority.name())}"
@@ -191,7 +200,15 @@
     </span>
                     </td>
                     <td th:text="${ticket.assignedTechnicianUsername} ?: 'Not assigned'"></td>
-                    <td th:text="${ticket.overdue} ? 'Yes' : 'No'"></td>
+                    <td>
+                        <span th:if="${ticket.needsAttention}" class="badge attention-badge">1h+ UNATTENDED</span>
+
+                        <span th:unless="${ticket.needsAttention}"
+                              class="badge"
+                              th:classappend="${ticket.overdue} ? ' overdue-yes' : ' overdue-no'"
+                              th:text="${ticket.overdue} ? 'OVERDUE' : 'ON TIME'">
+    </span>
+                    </td>
                     <td>
                         <a th:href="@{'/admin/tickets/' + ${ticket.id}}" class="table-link-btn">View</a>
                     </td>

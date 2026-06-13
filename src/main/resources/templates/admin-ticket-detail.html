@@ -35,7 +35,13 @@
                 <div><strong>Device:</strong> <span th:text="${ticket.deviceType}"></span></div>
                 <div><strong>Issue Category:</strong> <span th:text="${ticket.issueCategory}"></span></div>
                 <div><strong>Asset Number:</strong> <span th:text="${ticket.assetNumber}"></span></div>
-                <div><strong>Status:</strong> <span th:text="${ticket.status}"></span></div>
+                <div>
+                    <strong>Status:</strong>
+                    <span class="badge"
+                          th:classappend="' status-' + ${#strings.toLowerCase(ticket.status.name())}"
+                          th:text="${ticket.status}">
+    </span>
+                </div>
                 <div>
                     <strong>Priority:</strong>
                     <span class="badge"

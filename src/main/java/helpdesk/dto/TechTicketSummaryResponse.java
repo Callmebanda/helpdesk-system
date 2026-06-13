@@ -12,4 +12,5 @@ public class TechTicketSummaryResponse {
     private long inProgress;
     private long resolved;
     private long overdue;
+    private long escalated;
 }
