@@ -22,6 +22,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
+import helpdesk.service.NotificationService;
 
 import java.util.ArrayList;
 
@@ -35,6 +36,7 @@ public class DeviceReportService {
     private final DeviceReportRepository deviceReportRepository;
     private final DeviceRepository deviceRepository;
     private final UserRepository userRepository;
+    private final NotificationService notificationService;
 
     @Transactional
     public DeviceReportResponse createReport(String username, CreateDeviceReportRequest request) {
@@ -66,6 +68,7 @@ public class DeviceReportService {
                 .build();
 
         DeviceReport savedReport = deviceReportRepository.save(report);
+        notificationService.notifySupervisorsDeviceReportSubmitted(savedReport);
         return mapToResponse(savedReport);
     }
 
@@ -101,6 +104,7 @@ public class DeviceReportService {
         report.setReviewedAt(LocalDateTime.now());
 
         DeviceReport savedReport = deviceReportRepository.save(report);
+        notificationService.notifyUserDeviceReportReviewed(savedReport);
         return mapToResponse(savedReport);
     }
 

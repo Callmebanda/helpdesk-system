@@ -23,6 +23,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
+import helpdesk.service.NotificationService;
 
 import java.util.ArrayList;
 
@@ -37,6 +38,7 @@ public class TicketService {
     private final TicketRepository ticketRepository;
     private final UserRepository userRepository;
     private final TicketActivityService ticketActivityService;
+    private final NotificationService notificationService;
 
     @Transactional
     public TicketResponse createTicket(String username, CreateTicketRequest request) {
@@ -177,6 +179,7 @@ public class TicketService {
         ticket.setAssignedAt(LocalDateTime.now());
 
         Ticket savedTicket = ticketRepository.save(ticket);
+        notificationService.notifyTechnicianTicketAssigned(savedTicket);
 
         ticketActivityService.logActivity(
                 savedTicket,

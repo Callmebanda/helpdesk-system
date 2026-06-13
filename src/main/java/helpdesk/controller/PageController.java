@@ -35,6 +35,8 @@ import helpdesk.model.DeviceReportStatus;
 import helpdesk.model.DeviceReportType;
 import helpdesk.service.DeviceReportService;
 import org.springframework.data.domain.Page;
+import helpdesk.dto.NotificationResponse;
+import helpdesk.service.NotificationService;
 
 import java.util.List;
 
@@ -49,6 +51,7 @@ public class PageController {
     private final UserImportService userImportService;
     private final DeviceService deviceService;
     private final DeviceReportService deviceReportService;
+    private final NotificationService notificationService;
 
     @GetMapping("/login")
     public String loginPage() {
@@ -117,6 +120,8 @@ public class PageController {
         model.addAttribute("selectedPriority", priority);
         model.addAttribute("selectedOverdue", overdue);
 
+        addNotificationAttributes(model, username);
+
         return "user-dashboard";
     }
 
@@ -171,6 +176,8 @@ public class PageController {
         model.addAttribute("selectedAssignedTechnicianUsername", assignedTechnicianUsername);
         model.addAttribute("selectedDepartment", department);
         model.addAttribute("selectedOverdue", overdue);
+
+        addNotificationAttributes(model, username);
 
         return "admin-dashboard";
     }
@@ -309,6 +316,8 @@ public class PageController {
         model.addAttribute("selectedStatus", status);
         model.addAttribute("selectedPriority", priority);
         model.addAttribute("selectedOverdue", overdue);
+
+        addNotificationAttributes(model, username);
 
         return "tech-dashboard";
     }
@@ -913,5 +922,88 @@ public class PageController {
         }
 
         return "redirect:/admin/device-reports";
+    }
+
+    private void addNotificationAttributes(Model model, String username) {
+        model.addAttribute("notifications", notificationService.getRecentUnreadNotifications(username, 3));
+        model.addAttribute("unreadNotificationCount", notificationService.countUnreadNotifications(username));
+    }
+
+    @PostMapping("/admin/notifications/{id}/open")
+    public String openAdminNotification(@PathVariable Long id,
+                                        Authentication authentication,
+                                        RedirectAttributes redirectAttributes) {
+        try {
+            String link = notificationService.openNotification(id, authentication.getName());
+            return "redirect:" + link;
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/admin/dashboard";
+        }
+    }
+
+    @PostMapping("/tech/notifications/{id}/open")
+    public String openTechNotification(@PathVariable Long id,
+                                       Authentication authentication,
+                                       RedirectAttributes redirectAttributes) {
+        try {
+            String link = notificationService.openNotification(id, authentication.getName());
+            return "redirect:" + link;
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/tech/dashboard";
+        }
+    }
+
+    @PostMapping("/user/notifications/{id}/open")
+    public String openUserNotification(@PathVariable Long id,
+                                       Authentication authentication,
+                                       RedirectAttributes redirectAttributes) {
+        try {
+            String link = notificationService.openNotification(id, authentication.getName());
+            return "redirect:" + link;
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+            return "redirect:/user/dashboard";
+        }
+    }
+
+    @PostMapping("/admin/notifications/{id}/read")
+    public String markAdminNotificationRead(@PathVariable Long id,
+                                            Authentication authentication,
+                                            RedirectAttributes redirectAttributes) {
+        try {
+            notificationService.markAsRead(id, authentication.getName());
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
+        return "redirect:/admin/dashboard";
+    }
+
+    @PostMapping("/tech/notifications/{id}/read")
+    public String markTechNotificationRead(@PathVariable Long id,
+                                           Authentication authentication,
+                                           RedirectAttributes redirectAttributes) {
+        try {
+            notificationService.markAsRead(id, authentication.getName());
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
+        return "redirect:/tech/dashboard";
+    }
+
+    @PostMapping("/user/notifications/{id}/read")
+    public String markUserNotificationRead(@PathVariable Long id,
+                                           Authentication authentication,
+                                           RedirectAttributes redirectAttributes) {
+        try {
+            notificationService.markAsRead(id, authentication.getName());
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
+        return "redirect:/user/dashboard";
     }
 }
