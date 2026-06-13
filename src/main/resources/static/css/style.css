@@ -441,3 +441,8 @@ select, textarea {
     border: none;
     cursor: pointer;
 }
+
+small {
+    color: #555;
+    font-size: 12px;
+}

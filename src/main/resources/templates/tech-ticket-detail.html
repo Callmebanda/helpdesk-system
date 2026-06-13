@@ -99,6 +99,48 @@
             </div>
         </div>
 
+        <div class="card" th:if="${device != null}">
+            <h2>Repair Custody</h2>
+
+            <div class="detail-grid">
+                <div><strong>Asset Number:</strong> <span th:text="${device.assetNumber}"></span></div>
+                <div><strong>Device Type:</strong> <span th:text="${device.deviceType}"></span></div>
+                <div><strong>Current Status:</strong> <span th:text="${device.status}"></span></div>
+
+                <div>
+                    <strong>Current Possession:</strong>
+                    <span th:if="${device.takenForRepair}">
+                With technician
+                <span th:text="${device.takenForRepairByUsername}"></span>
+                since
+                <span th:text="${device.takenForRepairAt}"></span>
+            </span>
+                    <span th:unless="${device.takenForRepair}">
+                Still with user / office
+            </span>
+                </div>
+            </div>
+
+            <div class="inline-actions">
+                <form th:if="${!device.takenForRepair}"
+                      th:action="@{'/tech/tickets/' + ${ticket.id} + '/take-device'}"
+                      method="post">
+                    <button type="submit" class="primary-small-btn">Take Device for Repair</button>
+                </form>
+
+                <form th:if="${device.takenForRepair}"
+                      th:action="@{'/tech/tickets/' + ${ticket.id} + '/return-device'}"
+                      method="post">
+                    <button type="submit" class="secondary-link-btn">Mark Device Returned</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card" th:if="${device == null}">
+            <h2>Repair Custody</h2>
+            <p>No matching inventory device was found for this ticket’s asset number.</p>
+        </div>
+
         <div class="card">
             <h2>Activity Timeline</h2>
 

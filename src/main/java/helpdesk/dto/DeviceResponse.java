@@ -27,6 +27,11 @@ public class DeviceResponse {
     private DeviceStatus status;
     private String notes;
 
+    private boolean takenForRepair;
+    private String takenForRepairByUsername;
+    private LocalDateTime takenForRepairAt;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
 }

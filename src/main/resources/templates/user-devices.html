@@ -11,10 +11,10 @@
         <h1>My Devices</h1>
         <div>
             <span th:text="'Signed in as: ' + ${username}"></span>
-            <a href="/user/dashboard" class="logout-btn">Dashboard</a>
-            <a href="/user/device-reports/new" class="logout-btn">Report Device Issue</a>
-            <a href="/user/device-reports" class="logout-btn">My Reports</a>
-            <a href="/logout" class="logout-btn">Logout</a>
+            <a th:href="@{/user/dashboard}" class="logout-btn">Dashboard</a>
+            <a th:href="@{/user/device-reports/new}" class="logout-btn">Report Device Issue</a>
+            <a th:href="@{/user/device-reports}" class="logout-btn">My Reports</a>
+            <a th:href="@{/logout}" class="logout-btn">Logout</a>
         </div>
     </header>
 
@@ -32,6 +32,7 @@
                     <th>Building</th>
                     <th>Office</th>
                     <th>Status</th>
+                    <th>Availability</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -43,9 +44,24 @@
                     <td th:text="${device.building} ?: '-'"></td>
                     <td th:text="${device.officeNumber} ?: '-'"></td>
                     <td th:text="${device.status}"></td>
+                    <td>
+    <span th:if="${device.takenForRepair}" class="badge attention-badge">
+        WITH TECHNICIAN
+    </span>
+                        <span th:if="${device.takenForRepair}">
+        <br>
+        <small>
+            Taken by <span th:text="${device.takenForRepairByUsername}"></span>
+            on <span th:text="${device.takenForRepairAt}"></span>
+        </small>
+    </span>
+                        <span th:unless="${device.takenForRepair}" class="badge overdue-no">
+        WITH USER
+    </span>
+                    </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(devices)}">
-                    <td colspan="7">No devices assigned to you yet.</td>
+                    <td colspan="8">No devices assigned to you yet.</td>
                 </tr>
                 </tbody>
             </table>

@@ -407,13 +407,45 @@ public class PageController {
         AdminTicketResponse ticket = ticketService.getAssignedTicketById(id, username);
         List<TicketActivityResponse> activities =
                 ticketActivityService.getTechnicianActivities(id, username);
+        DeviceResponse device = deviceService.getDeviceByAssetNumberOrNull(ticket.getAssetNumber());
 
         model.addAttribute("username", username);
         model.addAttribute("ticket", ticket);
         model.addAttribute("activities", activities);
         model.addAttribute("statuses", TicketStatus.values());
+        model.addAttribute("device", device);
+
+
 
         return "tech-ticket-detail";
+    }
+
+    @PostMapping("/tech/tickets/{id}/take-device")
+    public String takeDeviceForRepair(@PathVariable Long id,
+                                      Authentication authentication,
+                                      RedirectAttributes redirectAttributes) {
+        try {
+            ticketService.takeAssignedTicketDevice(id, authentication.getName());
+            redirectAttributes.addFlashAttribute("successMessage", "Device marked as taken for repair.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
+        return "redirect:/tech/tickets/" + id;
+    }
+
+    @PostMapping("/tech/tickets/{id}/return-device")
+    public String returnDeviceAfterRepair(@PathVariable Long id,
+                                          Authentication authentication,
+                                          RedirectAttributes redirectAttributes) {
+        try {
+            ticketService.returnAssignedTicketDevice(id, authentication.getName());
+            redirectAttributes.addFlashAttribute("successMessage", "Device marked as returned after repair.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
+        return "redirect:/tech/tickets/" + id;
     }
 
     @PostMapping("/tech/tickets/{id}/status")

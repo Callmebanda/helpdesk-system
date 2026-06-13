@@ -49,6 +49,13 @@ public class Device {
 
     private LocalDateTime updatedAt;
 
+    @Column(nullable = false)
+    private boolean takenForRepair;
+
+    private String takenForRepairByUsername;
+
+    private LocalDateTime takenForRepairAt;
+
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
@@ -57,6 +64,8 @@ public class Device {
         if (this.status == null) {
             this.status = DeviceStatus.ACTIVE;
         }
+
+        this.takenForRepair = false;
     }
 
     @PreUpdate

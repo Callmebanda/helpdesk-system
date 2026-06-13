@@ -206,6 +206,7 @@
                     <th>Location</th>
                     <th>Assigned To</th>
                     <th>Status</th>
+                    <th>Availability</th>
                     <th>Assign</th>
                 </tr>
                 </thead>
@@ -220,6 +221,21 @@
                     <td th:text="${device.assignedUsername} ?: 'Not assigned'"></td>
                     <td th:text="${device.status}"></td>
                     <td>
+    <span th:if="${device.takenForRepair}" class="badge attention-badge">
+        WITH TECHNICIAN
+    </span>
+                        <span th:if="${device.takenForRepair}">
+        <br>
+        <small>
+            <span th:text="${device.takenForRepairByUsername}"></span>
+            since <span th:text="${device.takenForRepairAt}"></span>
+        </small>
+    </span>
+                        <span th:unless="${device.takenForRepair}" class="badge overdue-no">
+        AVAILABLE / IN OFFICE
+    </span>
+                    </td>
+                    <td>
                         <div class="inline-actions">
                             <a th:href="@{'/admin/devices/' + ${device.id} + '/assign'}" class="table-link-btn">Assign</a>
 
@@ -232,7 +248,7 @@
                     </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(devices)}">
-                    <td colspan="9">No devices found.</td>
+                    <td colspan="10">No devices found.</td>
                 </tr>
                 </tbody>
             </table>

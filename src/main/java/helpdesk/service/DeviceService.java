@@ -207,8 +207,22 @@ public class DeviceService {
                 .assignedDepartment(assignedUser != null ? assignedUser.getDepartment() : null)
                 .status(device.getStatus())
                 .notes(device.getNotes())
+                .takenForRepair(device.isTakenForRepair())
+                .takenForRepairByUsername(device.getTakenForRepairByUsername())
+                .takenForRepairAt(device.getTakenForRepairAt())
                 .createdAt(device.getCreatedAt())
                 .updatedAt(device.getUpdatedAt())
                 .build();
+    }
+
+    @Transactional(readOnly = true)
+    public DeviceResponse getDeviceByAssetNumberOrNull(String assetNumber) {
+        if (assetNumber == null || assetNumber.isBlank()) {
+            return null;
+        }
+
+        return deviceRepository.findByAssetNumber(assetNumber)
+                .map(this::mapToResponse)
+                .orElse(null);
     }
 }

@@ -1,14 +1,8 @@
 package helpdesk.service;
 
 import helpdesk.dto.*;
-import helpdesk.model.ActivityType;
-import helpdesk.model.DeviceType;
-import helpdesk.model.IssueCategory;
-import helpdesk.model.Role;
-import helpdesk.model.Ticket;
-import helpdesk.model.TicketPriority;
-import helpdesk.model.TicketStatus;
-import helpdesk.model.User;
+import helpdesk.model.*;
+import helpdesk.repository.DeviceRepository;
 import helpdesk.repository.TicketRepository;
 import helpdesk.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +33,7 @@ public class TicketService {
     private final UserRepository userRepository;
     private final TicketActivityService ticketActivityService;
     private final NotificationService notificationService;
+    private final DeviceRepository deviceRepository;
 
     @Transactional
     public TicketResponse createTicket(String username, CreateTicketRequest request) {
@@ -91,6 +86,83 @@ public class TicketService {
                 .stream()
                 .map(this::mapToAdminResponse)
                 .toList();
+    }
+
+    private Ticket getAssignedTicketEntity(Long id, String technicianUsername) {
+        Ticket ticket = ticketRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Ticket not found"));
+
+        if (ticket.getAssignedTechnician() == null) {
+            throw new RuntimeException("Ticket is not assigned to any technician");
+        }
+
+        if (!ticket.getAssignedTechnician().getUsername().equals(technicianUsername)) {
+            throw new RuntimeException("You are not assigned to this ticket");
+        }
+
+        return ticket;
+    }
+
+    @Transactional
+    public void takeAssignedTicketDevice(Long ticketId, String technicianUsername) {
+        Ticket ticket = getAssignedTicketEntity(ticketId, technicianUsername);
+
+        if (ticket.getAssetNumber() == null || ticket.getAssetNumber().isBlank()) {
+            throw new RuntimeException("This ticket does not have an asset number");
+        }
+
+        Device device = deviceRepository.findByAssetNumber(ticket.getAssetNumber())
+                .orElseThrow(() -> new RuntimeException("Device not found in inventory for asset number " + ticket.getAssetNumber()));
+
+        if (device.isTakenForRepair()) {
+            throw new RuntimeException("This device is already marked as taken for repair");
+        }
+
+        device.setTakenForRepair(true);
+        device.setTakenForRepairByUsername(technicianUsername);
+        device.setTakenForRepairAt(LocalDateTime.now());
+        device.setStatus(DeviceStatus.UNDER_REPAIR);
+
+        deviceRepository.save(device);
+
+        ticketActivityService.logActivity(
+                ticket,
+                ActivityType.DEVICE_TAKEN_FOR_REPAIR,
+                technicianUsername,
+                "Device " + device.getAssetNumber() + " was taken from the office for repair by " + technicianUsername,
+                true
+        );
+    }
+
+    @Transactional
+    public void returnAssignedTicketDevice(Long ticketId, String technicianUsername) {
+        Ticket ticket = getAssignedTicketEntity(ticketId, technicianUsername);
+
+        if (ticket.getAssetNumber() == null || ticket.getAssetNumber().isBlank()) {
+            throw new RuntimeException("This ticket does not have an asset number");
+        }
+
+        Device device = deviceRepository.findByAssetNumber(ticket.getAssetNumber())
+                .orElseThrow(() -> new RuntimeException("Device not found in inventory for asset number " + ticket.getAssetNumber()));
+
+        if (!device.isTakenForRepair()) {
+            throw new RuntimeException("This device is not currently marked as taken for repair");
+        }
+
+        device.setTakenForRepair(false);
+        device.setTakenForRepairByUsername(null);
+        device.setTakenForRepairAt(null);
+        device.setStatus(DeviceStatus.ACTIVE);
+
+        deviceRepository.save(device);
+
+        ticketActivityService.logActivity(
+                ticket,
+                ActivityType.DEVICE_RETURNED_AFTER_REPAIR,
+                technicianUsername,
+                "Device " + device.getAssetNumber() + " was returned after repair by " + technicianUsername,
+                true
+        );
     }
 
     @Transactional
